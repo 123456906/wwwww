@@ -2,10 +2,10 @@
 displayName: "Java Mod Template"
 
 #the internal name of your mod
-name: "example-java-mod"
+name: "FusionPlanet"
 
 #your name
-author: "You"
+author: "YZYDR"
 
 #the fully qualified main class of the mod
 main: "example.ExampleJavaMod"
