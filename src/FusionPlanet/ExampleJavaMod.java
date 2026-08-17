@@ -1,4 +1,4 @@
-package example;
+package FusionPlanet;
 
 import arc.*;
 import arc.util.*;
