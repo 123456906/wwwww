@@ -8,7 +8,6 @@ import mindustry.mod.*;
 import mindustry.ui.dialogs.*;
 import mindustry.ctype.UnlockableContent;
 import mindustry.Vars;
-import mindustry.content.*;
 
 public class ExampleJavaMod extends Mod{
 
@@ -30,24 +29,23 @@ public class ExampleJavaMod extends Mod{
     public void loadContent(){
         Log.info("Loading some example content.");
 
-        // ★ 解锁所有内容 ★
         Events.on(ContentInitEvent.class, e -> {
             for (UnlockableContent c : Vars.content.blocks()) {
-                c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) c.alwaysUnlocked = true;
             }
             for (UnlockableContent c : Vars.content.items()) {
-                c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) c.alwaysUnlocked = true;
             }
             for (UnlockableContent c : Vars.content.liquids()) {
-                c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) c.alwaysUnlocked = true;
             }
             for (UnlockableContent c : Vars.content.units()) {
-                c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) c.alwaysUnlocked = true;
             }
             for (UnlockableContent c : Vars.content.statusEffects()) {
-                c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) c.alwaysUnlocked = true;
             }
-            Log.info("All content unlocked!");
+            Log.info("All vanilla content unlocked!");
         });
 
         fPlanets.load();
