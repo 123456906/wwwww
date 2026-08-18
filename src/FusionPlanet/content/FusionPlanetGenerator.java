@@ -33,7 +33,6 @@ import static mindustry.Vars.*;
 
 public class FusionPlanetGenerator extends PlanetGenerator {
 
-    // -------- 地形数据 ----------
     private static final Block[][] serpuloArr = {
             {Blocks.water, Blocks.darksandWater, Blocks.darksand, Blocks.darksand, Blocks.darksand, Blocks.darksand, Blocks.sand, Blocks.sand, Blocks.sand, Blocks.sand, Blocks.darksandTaintedWater, Blocks.stone, Blocks.stone},
             {Blocks.water, Blocks.darksandWater, Blocks.darksand, Blocks.darksand, Blocks.sand, Blocks.sand, Blocks.sand, Blocks.sand, Blocks.sand, Blocks.darksandTaintedWater, Blocks.stone, Blocks.stone, Blocks.stone},
@@ -63,7 +62,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
 
     private final ObjectMap<Block, Block> decMap = new ObjectMap<>();
 
-    // -------- 生成器参数 ----------
     public float heightScl = 0.9f;
     public int octaves = 8;
     public float persistence = 0.7f;
@@ -71,7 +69,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
     public float heightMult = 0.8f;
     public float scl = 5f;
 
-    // Erekir 参数
     public float arkThresh = 0.28f;
     public float arkScl = 0.83f;
     public int arkSeed = 7;
@@ -83,31 +80,26 @@ public class FusionPlanetGenerator extends PlanetGenerator {
     public float crystalScl = 0.9f;
     public float crystalMag = 0.3f;
 
-    // 高度控制
     public float iceHeightScale = 1.0f;
     public float darksandMin = -0.4f;
     public float darksandMax = 0.2f;
     public float erekirHeightOffset = 0.1f;
     public float erekirHeightScale = 1.2f;
 
-    // 混合参数
     public int mixSeed = 9999;
     public int mixOctaves = 4;
     public float mixFreq = 0.25f;
     public float mixThreshold = 0.7f;
     public Vec3 basePos = new Vec3(0.9341721f, 0f, 0.3568221f);
 
-    // 基地生成器（原版）
     private final BaseGenerator basegen = new BaseGenerator();
 
-    // 构造函数，初始化 decMap
     public FusionPlanetGenerator() {
         decMap.put(Blocks.moss, Blocks.sporeCluster);
         decMap.put(Blocks.taintedWater, Blocks.water);
         decMap.put(Blocks.darksandTaintedWater, Blocks.darksandWater);
     }
 
-    // -------- 高度计算 ----------
     private float rawHeight(Vec3 pos) {
         float h = Simplex.noise3d(seed, octaves, persistence, 1f / heightScl,
                 10f + pos.x, 10f + pos.y, 10f + pos.z);
@@ -121,7 +113,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         return temp - 0.1f;
     }
 
-    // 原版 Serpulo 查表
     private Block getSerpuloBlock(Vec3 pos) {
         float h = rawHeight(pos);
         float px = pos.x * scl;
@@ -140,14 +131,12 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         int col = Mathf.clamp((int)(height * serpuloArr[0].length), 0, serpuloArr[0].length - 1);
         Block block = serpuloArr[row][col];
 
-        // 黑沙地高度控制
         if (height >= darksandMin && height <= darksandMax) {
             if (block == Blocks.grass || block == Blocks.sand || block == Blocks.dirt || block == Blocks.mud) {
                 return Blocks.darksand;
             }
         }
 
-        // 冰原限制
         if (block == Blocks.snow || block == Blocks.ice || block == Blocks.iceSnow) {
             float iceNoise = Ridged.noise3d(seed + 999, pos.x * 1.2f, pos.y * 1.2f + 50f, pos.z * 1.2f, 2, 0.6f);
             float iceFactor = iceNoise * 0.5f + 0.5f;
@@ -244,7 +233,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         }
     }
 
-    // ---------- 原版风格的噪声函数 ----------
     protected float noise(float x, float y, double octaves, double falloff, double scl, double mag) {
         Vec3 v = sector.rect.project(x, y).scl(5f);
         return Simplex.noise3d(seed, octaves, falloff, 1f / scl, v.x, v.y, v.z) * (float)mag;
@@ -257,7 +245,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         int cx = w / 2, cy = h / 2;
         float difficulty = sector != null ? sector.threat : 0.5f;
 
-        // ---------- 1. 装饰生成 ----------
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 Tile tile = tiles.getn(x, y);
@@ -295,7 +282,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // ---------- 2. 核心区域清空 ----------
         for (int dx = -15; dx <= 15; dx++) {
             for (int dy = -15; dy <= 15; dy++) {
                 if (dx * dx + dy * dy > 15 * 15) continue;
@@ -308,7 +294,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // ---------- 3. 页岩和污水 ----------
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 if (x < 5 || x >= w - 5 || y < 5 || y >= h - 5) continue;
@@ -325,7 +310,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // ---------- 4. 外围5格基础矿物 ----------
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 if (x >= 5 && x < w - 5 && y >= 5 && y < h - 5) continue;
@@ -340,7 +324,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // ---------- 5. 矿物生成 ----------
         float poles = Math.abs(sector.tile.v.y);
         float nmag = 0.5f;
         float scl = 1.0f;
@@ -362,7 +345,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         if (rand.chance(0.25)) {
             ores.add(Blocks.oreScrap);
         }
-        // 强制加入铍矿
         ores.add(Blocks.oreBeryllium);
 
         FloatSeq frequencies = new FloatSeq();
@@ -395,7 +377,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // ---------- 6. darkPanel6 + metalFloor 空框架 ----------
         int metalSeed = this.seed + 3;
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
@@ -443,7 +424,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // ---------- 7. 墙壁生成 ----------
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 Tile tile = tiles.getn(x, y);
@@ -471,7 +451,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // ---------- 8. 敌人出生点和波次 ----------
         int spawnX = cx, spawnY = cy;
         Seq<Vec2> enemySpawns = new Seq<>();
         int offset = rand.nextInt(360);
@@ -512,7 +491,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // 放置敌人出生点
         Seq<Tile> enemyTiles = new Seq<>();
         for (Vec2 e : enemySpawns) {
             Tile tile = tiles.getn((int)e.x, (int)e.y);
@@ -539,14 +517,13 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             state.rules.waves = true;
         }
 
-        // ---------- 9. 核心放置（找无墙位置） ----------
         int coreX = spawnX, coreY = spawnY;
         boolean found = false;
-        int searchRadius = 20;
+        int searchRadius = 30;
+
         for (int r = 0; r <= searchRadius && !found; r++) {
             for (int dx = -r; dx <= r && !found; dx++) {
                 for (int dy = -r; dy <= r && !found; dy++) {
-                    if (Math.abs(dx) != r && Math.abs(dy) != r) continue;
                     int tx = spawnX + dx, ty = spawnY + dy;
                     if (tx < 0 || tx >= w || ty < 0 || ty >= h) continue;
                     Tile tile = tiles.getn(tx, ty);
@@ -555,22 +532,27 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                     Floor floor = tile.floor();
                     if (floor == null || floor.isLiquid) continue;
                     if (floor == Blocks.ice || floor == Blocks.iceSnow || floor == Blocks.snow) continue;
-                    boolean hasWall = false;
-                    for (int d = 0; d < 4; d++) {
-                        int nx = tx + Geometry.d4[d].x;
-                        int ny = ty + Geometry.d4[d].y;
-                        if (nx < 0 || nx >= w || ny < 0 || ny >= h) { hasWall = true; break; }
-                        Tile neighbor = tiles.getn(nx, ny);
-                        if (neighbor == null || neighbor.block() != Blocks.air) {
-                            hasWall = true;
-                            break;
+
+                    boolean hasWallNearby = false;
+                    int checkRadius = 3;
+                    for (int dx2 = -checkRadius; dx2 <= checkRadius && !hasWallNearby; dx2++) {
+                        for (int dy2 = -checkRadius; dy2 <= checkRadius && !hasWallNearby; dy2++) {
+                            int nx = tx + dx2, ny = ty + dy2;
+                            if (nx < 0 || nx >= w || ny < 0 || ny >= h) {
+                                hasWallNearby = true;
+                                break;
+                            }
+                            Tile neighbor = tiles.getn(nx, ny);
+                            if (neighbor != null && neighbor.block() != Blocks.air) {
+                                hasWallNearby = true;
+                                break;
+                            }
                         }
                     }
-                    if (!hasWall) {
+                    if (!hasWallNearby) {
                         coreX = tx;
                         coreY = ty;
                         found = true;
-                        break;
                     }
                 }
             }
@@ -579,13 +561,19 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         if (!found) {
             coreX = spawnX;
             coreY = spawnY;
-            for (int d = 0; d < 4; d++) {
-                int nx = coreX + Geometry.d4[d].x;
-                int ny = coreY + Geometry.d4[d].y;
-                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-                    Tile tile = tiles.getn(nx, ny);
-                    if (tile != null && tile.block() != Blocks.air) {
-                        tile.setBlock(Blocks.air);
+            int clearRadius = 6;
+            for (int dx = -clearRadius; dx <= clearRadius; dx++) {
+                for (int dy = -clearRadius; dy <= clearRadius; dy++) {
+                    int tx = coreX + dx, ty = coreY + dy;
+                    if (tx >= 0 && tx < w && ty >= 0 && ty < h) {
+                        Tile tile = tiles.getn(tx, ty);
+                        if (tile != null) {
+                            tile.setBlock(Blocks.air);
+                            Floor floor = tile.floor();
+                            if (floor == null || floor.isLiquid || floor == Blocks.ice || floor == Blocks.iceSnow || floor == Blocks.snow) {
+                                tile.setFloor(Blocks.stone.asFloor());
+                            }
+                        }
                     }
                 }
             }
@@ -593,7 +581,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
 
         Schematics.placeLaunchLoadout(coreX, coreY);
 
-        // ---------- 10. 规则 ----------
         state.rules.env = Env.terrestrial;
         state.rules.placeRangeCheck = true;
     }
