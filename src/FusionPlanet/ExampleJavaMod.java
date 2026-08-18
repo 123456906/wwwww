@@ -19,7 +19,7 @@ public class ExampleJavaMod extends Mod{
                 BaseDialog dialog = new BaseDialog("雷霆大青蛙");
                 dialog.cont.add("behold").row();
                 dialog.cont.image(Core.atlas.find("example-java-mod-frog")).pad(20f).row();
-                dialog.cont.button("I am blind", dialog::hide).size(100f, 50f);
+                dialog.cont.button("I am blind", dialog::hide).size(200f, 50f);
                 dialog.show();
             });
         });
