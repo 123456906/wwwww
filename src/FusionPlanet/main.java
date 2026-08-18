@@ -2,12 +2,15 @@ package FusionPlanet;
 
 import FusionPlanet.content.fPlanets;
 import arc.*;
+import arc.struct.ObjectSet;
 import arc.util.*;
 import mindustry.game.EventType.*;
 import mindustry.mod.*;
+import mindustry.type.Planet;
 import mindustry.ui.dialogs.*;
 import mindustry.ctype.UnlockableContent;
 import mindustry.Vars;
+import mindustry.content.Planets;
 
 public class main extends Mod{
 
@@ -32,23 +35,55 @@ public class main extends Mod{
         fPlanets.load();
 
         Events.on(ContentInitEvent.class, e -> {
-            // 解锁所有原版内容，所有行星均可使用
+            Planet fusion = fPlanets.fusionPlanet;
+            if (fusion == null) {
+                Log.err("Fusion planet is null!");
+                return;
+            }
+
+            ObjectSet<Planet> allPlanets = ObjectSet.with(
+                    Planets.sun,
+                    Planets.serpulo,
+                    Planets.erekir,
+                    Planets.tantros,
+                    Planets.gier,
+                    Planets.notva,
+                    Planets.verilus,
+                    fusion
+            );
+
+            // 解锁所有原版内容，并添加到所有原版行星的显示列表中
             for (UnlockableContent c : Vars.content.blocks()) {
-                if (c.minfo.mod == null) c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) {
+                    c.alwaysUnlocked = true;
+                    c.shownPlanets = allPlanets;
+                }
             }
             for (UnlockableContent c : Vars.content.items()) {
-                if (c.minfo.mod == null) c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) {
+                    c.alwaysUnlocked = true;
+                    c.shownPlanets = allPlanets;
+                }
             }
             for (UnlockableContent c : Vars.content.liquids()) {
-                if (c.minfo.mod == null) c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) {
+                    c.alwaysUnlocked = true;
+                    c.shownPlanets = allPlanets;
+                }
             }
             for (UnlockableContent c : Vars.content.units()) {
-                if (c.minfo.mod == null) c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) {
+                    c.alwaysUnlocked = true;
+                    c.shownPlanets = allPlanets;
+                }
             }
             for (UnlockableContent c : Vars.content.statusEffects()) {
-                if (c.minfo.mod == null) c.alwaysUnlocked = true;
+                if (c.minfo.mod == null) {
+                    c.alwaysUnlocked = true;
+                    c.shownPlanets = allPlanets;
+                }
             }
-            Log.info("All vanilla content unlocked for all planets!");
+            Log.info("All vanilla content unlocked on all planets!");
         });
 
         Log.info("Fusion Planet loaded!");
