@@ -1,7 +1,7 @@
 package FusionPlanet.content;
 
 import arc.graphics.Color;
-import arc.math.Angles;
+import arc.math.Angles; 
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Vec2;
@@ -11,7 +11,6 @@ import arc.struct.Seq;
 import arc.util.noise.Ridged;
 import arc.util.noise.Simplex;
 import mindustry.content.Blocks;
-import mindustry.content.Liquids;
 import mindustry.content.Planets;
 import mindustry.game.Team;
 import mindustry.maps.generators.PlanetGenerator;
@@ -324,7 +323,10 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        float poles = Math.abs(sector.tile.v.y);
+        float poles = 0;
+        if (sector != null) {
+            poles = Math.abs(sector.tile.v.y);
+        }
         float nmag = 0.5f;
         float scl = 1.0f;
         float addscl = 1.3f;
@@ -535,7 +537,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
 
                     boolean hasWallNearby = false;
                     int checkRadius = 3;
-                    for (int dx2 = -checkRadius; dx2 <= checkRadius && !hasWallNearby; dx2++) {
+                    for (int dx2 = -checkRadius; dx2 <= checkRadius && !hasWallNearby; dx2++)
                         for (int dy2 = -checkRadius; dy2 <= checkRadius && !hasWallNearby; dy2++) {
                             int nx = tx + dx2, ny = ty + dy2;
                             if (nx < 0 || nx >= w || ny < 0 || ny >= h) {
@@ -548,7 +550,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                                 break;
                             }
                         }
-                    }
                     if (!hasWallNearby) {
                         coreX = tx;
                         coreY = ty;
