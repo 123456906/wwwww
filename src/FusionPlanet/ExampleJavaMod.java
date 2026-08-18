@@ -5,6 +5,7 @@ import arc.util.*;
 import mindustry.game.EventType.*;
 import mindustry.mod.*;
 import mindustry.ui.dialogs.*;
+import FusionPlanet.content.fPlanets;
 
 public class ExampleJavaMod extends Mod{
 
@@ -28,6 +29,8 @@ public class ExampleJavaMod extends Mod{
     @Override
     public void loadContent(){
         Log.info("Loading some example content.");
+        fPlanets.load();
+        Log.info("FuPlLoad");
     }
 
 }
