@@ -14,7 +14,7 @@ main: "FusionPlanet.ExampleJavaMod"
 description: "A Mindustry Java mod template."
 
 #the mod version
-version: 1.0
+version: 1.3
 
 #the minimum game build required to run this mod
 minGameVersion: 158
