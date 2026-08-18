@@ -9,9 +9,9 @@ import mindustry.ui.dialogs.*;
 import mindustry.ctype.UnlockableContent;
 import mindustry.Vars;
 
-public class ExampleJavaMod extends Mod{
+public class main extends Mod{
 
-    public ExampleJavaMod(){
+    public main(){
         Log.info("Loaded ExampleJavaMod constructor.");
 
         Events.on(ClientLoadEvent.class, e -> {

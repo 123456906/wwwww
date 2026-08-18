@@ -8,7 +8,7 @@ name: "FusionPlanet"
 author: "YZYDR"
 
 #the fully qualified main class of the mod
-main: "FusionPlanet.ExampleJavaMod"
+main: "FusionPlanet.main"
 
 #the mod description as seen in the mod dialog
 description: "A Mindustry Java mod template."
