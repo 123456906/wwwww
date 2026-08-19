@@ -1,7 +1,7 @@
 package FusionPlanet.content;
 
 import arc.graphics.Color;
-import arc.math.Angles; 
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Vec2;
@@ -244,6 +244,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         int cx = w / 2, cy = h / 2;
         float difficulty = sector != null ? sector.threat : 0.5f;
 
+        // ---------- 1. 装饰生成 ----------
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 Tile tile = tiles.getn(x, y);
@@ -257,9 +258,12 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                         if (other != null && other.block() == Blocks.air) any = true;
                         else all = false;
                     }
+                    // ★ 只放在空气上，不覆盖墙
                     if (any && ((block == Blocks.snowWall || block == Blocks.iceWall) ||
                             (all && block == Blocks.air && floor == Blocks.snow && rand.chance(0.03)))) {
-                        tile.setBlock(rand.chance(0.5) ? Blocks.whiteTree : Blocks.whiteTreeDead);
+                        if (tile.block() == Blocks.air) {
+                            tile.setBlock(rand.chance(0.5) ? Blocks.whiteTree : Blocks.whiteTreeDead);
+                        }
                     }
                 }
                 if (block == Blocks.air) {
@@ -271,7 +275,8 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                             break;
                         }
                     }
-                    if (!nearSolid && rand.chance(0.01) && floor.hasSurface()) {
+                    // 只在空气且没有邻接墙壁时放置装饰，且检查当前块仍是空气
+                    if (!nearSolid && rand.chance(0.01) && floor.hasSurface() && tile.block() == Blocks.air) {
                         Block deco = decMap.get(floor, floor.decoration);
                         if (deco != null && deco != Blocks.air) {
                             tile.setBlock(deco);
@@ -293,6 +298,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
+        // ---------- 3. 页岩和污水 ----------
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 if (x < 5 || x >= w - 5 || y < 5 || y >= h - 5) continue;
@@ -306,20 +312,6 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                 } else if (floor == Blocks.water || floor == Blocks.darksandWater) {
                     if (rand.chance(0.005)) tile.setFloor(Blocks.taintedWater.asFloor());
                 }
-            }
-        }
-
-        for (int x = 0; x < w; x++) {
-            for (int y = 0; y < h; y++) {
-                if (x >= 5 && x < w - 5 && y >= 5 && y < h - 5) continue;
-                Tile tile = tiles.getn(x, y);
-                if (tile == null) continue;
-                if (tile.floor() == null || tile.floor().isLiquid) continue;
-                if (tile.overlay() != Blocks.air) continue;
-                float r = rand.nextFloat();
-                if (r < 0.33f) tile.setOverlay(Blocks.oreBeryllium);
-                else if (r < 0.66f) tile.setOverlay(Blocks.oreLead);
-                else tile.setOverlay(Blocks.oreCopper);
             }
         }
 
@@ -453,6 +445,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
+        // ---------- 8. 敌人出生点和波次 ----------
         int spawnX = cx, spawnY = cy;
         Seq<Vec2> enemySpawns = new Seq<>();
         int offset = rand.nextInt(360);
@@ -504,7 +497,10 @@ public class FusionPlanetGenerator extends PlanetGenerator {
 
         if (enemySpawns.size > 0) {
             state.rules.attackMode = true;
-            state.rules.winWave = 15;
+            // ★ 根据资源丰富度（difficulty）计算波次，至少20波
+            int baseWaves = 20;
+            int extraWaves = (int)(difficulty * 30); // 最大+30波
+            state.rules.winWave = baseWaves + extraWaves;
             state.rules.waveSpacing = 60f * 60f * 2f;
             state.rules.waves = true;
             state.rules.enemyCoreBuildRadius = 600f;
@@ -515,7 +511,9 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                 Log.err("波次生成失败: @", e);
             }
         } else {
-            state.rules.winWave = 10;
+            int baseWaves = 20;
+            int extraWaves = (int)(difficulty * 20);
+            state.rules.winWave = baseWaves + extraWaves;
             state.rules.waves = true;
         }
 
@@ -537,7 +535,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
 
                     boolean hasWallNearby = false;
                     int checkRadius = 3;
-                    for (int dx2 = -checkRadius; dx2 <= checkRadius && !hasWallNearby; dx2++)
+                    for (int dx2 = -checkRadius; dx2 <= checkRadius && !hasWallNearby; dx2++) {
                         for (int dy2 = -checkRadius; dy2 <= checkRadius && !hasWallNearby; dy2++) {
                             int nx = tx + dx2, ny = ty + dy2;
                             if (nx < 0 || nx >= w || ny < 0 || ny >= h) {
@@ -550,6 +548,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                                 break;
                             }
                         }
+                    }
                     if (!hasWallNearby) {
                         coreX = tx;
                         coreY = ty;
@@ -574,6 +573,20 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                             if (floor == null || floor.isLiquid || floor == Blocks.ice || floor == Blocks.iceSnow || floor == Blocks.snow) {
                                 tile.setFloor(Blocks.stone.asFloor());
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -3; dy <= 3; dy++) {
+                int tx = coreX + dx, ty = coreY + dy;
+                if (tx >= 0 && tx < w && ty >= 0 && ty < h) {
+                    Tile tile = tiles.getn(tx, ty);
+                    if (tile != null) {
+                        if (tile.block() != Blocks.air) {
+                            tile.setBlock(Blocks.air);
                         }
                     }
                 }
