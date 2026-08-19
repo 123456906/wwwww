@@ -18,29 +18,37 @@ import static mindustry.Vars.*;
 
 public class RingPlanetGenerator extends PlanetGenerator {
 
-    public float heightScale = 2.0f;
-    public float waterLevel = 0.06f;
+    public float ringInnerRadius = 0.30f;
+    public float ringOuterRadius = 0.85f;
+    public float flatHeight = 0.04f;
+    public float edgeHeight = 0.25f;
 
     private Block[][] ringTerrain = {
-            {Blocks.water, Blocks.water, Blocks.sand, Blocks.sand, Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone},
-            {Blocks.water, Blocks.sand, Blocks.sand, Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone, Blocks.darksand},
-            {Blocks.sand, Blocks.sand, Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone, Blocks.darksand, Blocks.darksand},
-            {Blocks.sand, Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone, Blocks.darksand, Blocks.darksand, Blocks.darkMetal},
-            {Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone, Blocks.darksand, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel6},
-            {Blocks.stone, Blocks.stone, Blocks.darksand, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel6, Blocks.darkPanel6, Blocks.darkMetal},
-            {Blocks.darksand, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel6, Blocks.darkPanel6, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel3},
-            {Blocks.darkMetal, Blocks.darkPanel6, Blocks.darkPanel6, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel3, Blocks.darkPanel3, Blocks.metalFloorDamaged}
+            // 内圈（平坦低地）
+            {Blocks.water, Blocks.water, Blocks.sand, Blocks.sand, Blocks.grass, Blocks.grass},
+            {Blocks.water, Blocks.sand, Blocks.sand, Blocks.grass, Blocks.grass, Blocks.stone},
+            {Blocks.sand, Blocks.sand, Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone},
+            {Blocks.sand, Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone, Blocks.darksand},
+            {Blocks.grass, Blocks.grass, Blocks.stone, Blocks.stone, Blocks.darksand, Blocks.darkMetal},
+            {Blocks.stone, Blocks.stone, Blocks.darksand, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel6},
+            {Blocks.darksand, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel6, Blocks.darkPanel6, Blocks.darkMetal},
+            {Blocks.darkMetal, Blocks.darkPanel6, Blocks.darkPanel6, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel3},
+            {Blocks.darkPanel6, Blocks.darkMetal, Blocks.darkMetal, Blocks.darkPanel3, Blocks.darkPanel3, Blocks.metalFloorDamaged}
     };
-
-    private Block[] decayDecor = {Blocks.metalFloorDamaged, Blocks.darkPanel3, Blocks.darkPanel4, Blocks.darkPanel5};
 
     @Override
     public float getHeight(Vec3 pos) {
-        float radial = Math.abs(pos.y);
-        float noise = Simplex.noise3d(seed, 4, 0.5f, 0.8f, pos.x * heightScale, pos.y * heightScale + 10, pos.z * heightScale);
-        noise = noise * 0.5f + 0.5f;
-        float h = Mathf.lerp(0.02f, noise * 0.8f + 0.1f, Mathf.clamp((radial - 0.1f) * 4f));
-        return Math.max(h, waterLevel);
+        float radial = (float)Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+        if (radial < ringInnerRadius) {
+            return flatHeight;
+        } else if (radial > ringOuterRadius) {
+            return flatHeight;
+        } else {
+            float t = (radial - ringInnerRadius) / (ringOuterRadius - ringInnerRadius);
+            float edge = Mathf.pow(t, 0.25f);
+            float noise = Simplex.noise3d(seed, 2, 0.5f, 0.5f, pos.x, pos.y, pos.z) * 0.015f;
+            return flatHeight + edge * edgeHeight + noise;
+        }
     }
 
     @Override
@@ -52,25 +60,12 @@ public class RingPlanetGenerator extends PlanetGenerator {
     }
 
     private Block getBlock(Vec3 pos) {
-        float h = rawHeight(pos);
-        float radial = Mathf.clamp(Math.abs(pos.y) * 1.8f);
-        float heightVal = Mathf.clamp(h * 1.2f);
-        int row = Mathf.clamp((int)(radial * (ringTerrain.length - 1)), 0, ringTerrain.length - 1);
-        int col = Mathf.clamp((int)(heightVal * (ringTerrain[0].length - 1)), 0, ringTerrain[0].length - 1);
-        Block block = ringTerrain[row][col];
-        if (block == Blocks.darkMetal || block == Blocks.darkPanel6) {
-            if (rand.chance(0.15)) {
-                block = decayDecor[rand.nextInt(decayDecor.length)];
-            }
-        }
-        return block;
-    }
-
-    private float rawHeight(Vec3 pos) {
-        float radial = Math.abs(pos.y);
-        float noise = Simplex.noise3d(seed, 4, 0.5f, 0.8f, pos.x * heightScale, pos.y * heightScale + 10, pos.z * heightScale);
-        noise = noise * 0.5f + 0.5f;
-        return Mathf.lerp(0.02f, noise * 0.8f + 0.1f, Mathf.clamp((radial - 0.1f) * 4f));
+        float h = getHeight(pos);
+        float radial = (float)Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+        float rowF = Mathf.clamp((radial - 0.1f) / 0.9f) * (ringTerrain.length - 1);
+        int row = Mathf.clamp((int)rowF, 0, ringTerrain.length - 1);
+        int col = Mathf.clamp((int)(h * (ringTerrain[0].length - 1) * 2f), 0, ringTerrain[0].length - 1);
+        return ringTerrain[row][col];
     }
 
     @Override
@@ -87,12 +82,8 @@ public class RingPlanetGenerator extends PlanetGenerator {
             tile.block = Blocks.air;
         }
         if (floor == Blocks.sand || floor == Blocks.grass || floor == Blocks.stone) {
-            if (rand.chance(0.04)) {
-                tile.block = Blocks.shrubs;
-            }
-            if (rand.chance(0.02)) {
-                tile.block = Blocks.pine;
-            }
+            if (rand.chance(0.04)) tile.block = Blocks.shrubs;
+            if (rand.chance(0.02)) tile.block = Blocks.pine;
         }
     }
 
@@ -107,15 +98,10 @@ public class RingPlanetGenerator extends PlanetGenerator {
                 if (tile == null) continue;
                 Floor floor = tile.floor();
                 if (floor == Blocks.darkMetal || floor == Blocks.darkPanel6 || floor == Blocks.metalFloorDamaged) {
-                    if (rand.chance(0.03)) {
-                        // ★ 修正：原 darkMetalWall 不存在，改为 darkMetal（或可继续使用地板，但这里作为装饰可保留）
-                        tile.setBlock(Blocks.darkMetal);
-                    }
+                    if (rand.chance(0.03)) tile.setBlock(Blocks.darkMetal);
                 }
                 if (floor == Blocks.grass || floor == Blocks.sand || floor == Blocks.stone) {
-                    if (rand.chance(0.02)) {
-                        tile.setBlock(Blocks.sporeCluster);
-                    }
+                    if (rand.chance(0.02)) tile.setBlock(Blocks.sporeCluster);
                 }
             }
         }
