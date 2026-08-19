@@ -12,11 +12,10 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.Vars;
 import mindustry.content.Planets;
 
-public class main extends Mod{
+public class main extends Mod {
 
-    public main(){
-        Log.info("Loaded ExampleJavaMod constructor.");
-
+    public main() {
+        Log.info("Loaded Main constructor.");
         Events.on(ClientLoadEvent.class, e -> {
             Time.runTask(10f, () -> {
                 BaseDialog dialog = new BaseDialog("frog");
@@ -29,15 +28,15 @@ public class main extends Mod{
     }
 
     @Override
-    public void loadContent(){
-        Log.info("Loading some example content.");
-
+    public void loadContent() {
+        Log.info("Loading content...");
         fPlanets.load();
 
         Events.on(ContentInitEvent.class, e -> {
             Planet fusion = fPlanets.fusionPlanet;
-            if (fusion == null) {
-                Log.err("Fusion planet is null!");
+            Planet ring = fPlanets.ringWorld;
+            if (fusion == null || ring == null) {
+                Log.err("Planets not loaded properly!");
                 return;
             }
 
@@ -49,10 +48,10 @@ public class main extends Mod{
                     Planets.gier,
                     Planets.notva,
                     Planets.verilus,
-                    fusion
+                    fusion,
+                    ring
             );
 
-            // 解锁所有原版内容，并添加到所有原版行星的显示列表中
             for (UnlockableContent c : Vars.content.blocks()) {
                 if (c.minfo.mod == null) {
                     c.alwaysUnlocked = true;
@@ -85,8 +84,6 @@ public class main extends Mod{
             }
             Log.info("All vanilla content unlocked on all planets!");
         });
-
-        Log.info("Fusion Planet loaded!");
+        Log.info("All content loaded.");
     }
-
 }
