@@ -12,10 +12,11 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.Vars;
 import mindustry.content.Planets;
 
-public class main extends Mod {
+public class main extends Mod{
 
-    public main() {
-        Log.info("Loaded Main constructor.");
+    public main(){
+        Log.info("Loaded ExampleJavaMod constructor.");
+
         Events.on(ClientLoadEvent.class, e -> {
             Time.runTask(10f, () -> {
                 BaseDialog dialog = new BaseDialog("frog");
@@ -28,15 +29,15 @@ public class main extends Mod {
     }
 
     @Override
-    public void loadContent() {
-        Log.info("Loading content...");
+    public void loadContent(){
+        Log.info("Loading some example content.");
+
         fPlanets.load();
 
         Events.on(ContentInitEvent.class, e -> {
             Planet fusion = fPlanets.fusionPlanet;
-            Planet ring = fPlanets.ringWorld;
-            if (fusion == null || ring == null) {
-                Log.err("Planets not loaded properly!");
+            if (fusion == null) {
+                Log.err("Fusion planet is null!");
                 return;
             }
 
@@ -48,8 +49,7 @@ public class main extends Mod {
                     Planets.gier,
                     Planets.notva,
                     Planets.verilus,
-                    fusion,
-                    ring
+                    fusion
             );
 
             for (UnlockableContent c : Vars.content.blocks()) {
@@ -84,6 +84,8 @@ public class main extends Mod {
             }
             Log.info("All vanilla content unlocked on all planets!");
         });
-        Log.info("All content loaded.");
+
+        Log.info("Fusion Planet loaded!");
     }
+
 }
