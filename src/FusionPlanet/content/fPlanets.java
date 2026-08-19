@@ -93,9 +93,9 @@ public class fPlanets {
 
 
             localizedName = "Ring World";
-            visible = true;
+            visible = false;
             accessible = true;
-            alwaysUnlocked = true;
+            alwaysUnlocked = false;
             bloom = false;
             defaultEnv = Env.terrestrial;
             allowLaunchToNumbered = true;
