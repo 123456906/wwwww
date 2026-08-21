@@ -11,11 +11,13 @@ import mindustry.game.Team;
 import mindustry.graphics.g3d.*;
 import mindustry.maps.generators.PlanetGenerator;
 import mindustry.type.Planet;
+import mindustry.type.SectorPreset;
 import mindustry.world.TileGen;
 import mindustry.world.meta.Env;
 
 public class fPlanets {
     public static Planet fusionPlanet;
+    public static SectorPreset undevelopedZone;
 
     public static void load() {
         fusionPlanet = new Planet("fusion-planet", Planets.sun, 1f, 2);
@@ -50,5 +52,12 @@ public class fPlanets {
             r.winWave = 10;
             r.placeRangeCheck = true;
         };
+
+        undevelopedZone = new SectorPreset("undeveloped-zone", fusionPlanet, 5);
+        undevelopedZone.localizedName = "未开发区";
+        undevelopedZone.description = "一片尚未被开发的区域";
+        undevelopedZone.difficulty = 1;
+        undevelopedZone.captureWave = 20;
+        undevelopedZone.alwaysUnlocked = true;
     }
 }

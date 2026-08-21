@@ -21,7 +21,7 @@ public class main extends Mod{
             Time.runTask(10f, () -> {
                 BaseDialog dialog = new BaseDialog("frog");
                 dialog.cont.add("雷霆大青蛙").row();
-                dialog.cont.image(Core.atlas.find("example-java-mod-frog")).pad(20f).row();
+                dialog.cont.image(Core.atlas.find("FusionPlanet-frog")).pad(20f).row();
                 dialog.cont.button("I am blind", dialog::hide).size(200f, 50f);
                 dialog.show();
             });
