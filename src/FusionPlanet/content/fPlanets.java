@@ -32,7 +32,7 @@ public class fPlanets {
         fusionPlanet.atmosphereRadIn = 0.02f;
         fusionPlanet.atmosphereRadOut = 0.28f;
         fusionPlanet.allowLaunchToNumbered = true;
-        fusionPlanet.startSector = 32;
+        fusionPlanet.startSector = 1;
         fusionPlanet.defaultCore = Blocks.coreShard;
 
         Color cloud1 = Color.valueOf("aabbdd");
@@ -53,11 +53,11 @@ public class fPlanets {
             r.placeRangeCheck = true;
         };
 
-        undevelopedZone = new SectorPreset("undeveloped-zone", fusionPlanet, 5);
+        undevelopedZone = new SectorPreset("undeveloped-zone", fusionPlanet, 1);
         undevelopedZone.localizedName = "未开发区";
         undevelopedZone.description = "一片尚未被开发的区域";
         undevelopedZone.difficulty = 1;
-        undevelopedZone.captureWave = 20;
+        undevelopedZone.captureWave = 10;
         undevelopedZone.alwaysUnlocked = true;
     }
 }
