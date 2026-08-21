@@ -13,7 +13,7 @@ public class Fblocks {
     public static Block coreEvoke;
 
     public static void load() {
-        coreEvoke = new CoreBlock("coreEvoke") {{
+        coreEvoke = new CoreBlock("core-evoke") {{
             size = 4;
             squareSprite = false;
             health = 3600;
