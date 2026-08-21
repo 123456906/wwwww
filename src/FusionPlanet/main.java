@@ -1,5 +1,7 @@
 package FusionPlanet;
 
+import FusionPlanet.content.Fblocks;
+import FusionPlanet.content.FtechTree;
 import FusionPlanet.content.fPlanets;
 import arc.*;
 import arc.struct.ObjectSet;
@@ -12,7 +14,7 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.Vars;
 import mindustry.content.Planets;
 
-public class main extends Mod{
+public class main extends Mod {
 
     public main(){
         Log.info("Loaded ExampleJavaMod constructor.");
@@ -33,6 +35,7 @@ public class main extends Mod{
         Log.info("Loading some example content.");
 
         fPlanets.load();
+        Fblocks.load();
 
         Events.on(ContentInitEvent.class, e -> {
             Planet fusion = fPlanets.fusionPlanet;
@@ -41,16 +44,17 @@ public class main extends Mod{
                 return;
             }
 
-            ObjectSet<Planet> allPlanets = ObjectSet.with(
-                    Planets.sun,
-                    Planets.serpulo,
-                    Planets.erekir,
-                    Planets.tantros,
-                    Planets.gier,
-                    Planets.notva,
-                    Planets.verilus,
-                    fusion
-            );
+            FtechTree.load();
+
+            ObjectSet<Planet> allPlanets = new ObjectSet<>();
+            allPlanets.add(Planets.sun);
+            allPlanets.add(Planets.serpulo);
+            allPlanets.add(Planets.erekir);
+            allPlanets.add(Planets.tantros);
+            allPlanets.add(Planets.gier);
+            allPlanets.add(Planets.notva);
+            allPlanets.add(Planets.verilus);
+            allPlanets.add(fusion);
 
             for (UnlockableContent c : Vars.content.blocks()) {
                 if (c.minfo.mod == null) {
@@ -87,5 +91,4 @@ public class main extends Mod{
 
         Log.info("Fusion Planet loaded!");
     }
-
 }
