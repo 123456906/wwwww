@@ -20,10 +20,9 @@ public class Fblocks {
             itemCapacity = 4000;
             unitType = UnitTypes.evoke;
             requirements(Category.effect, ItemStack.with(
-                    Items.copper, 500,
-                    Items.lead, 300,
-                    Items.silicon, 200,
-                    Items.titanium, 150
+                    Items.copper, 5000,
+                    Items.lead, 3000,
+                    Items.titanium, 1500
             ));
             alwaysUnlocked = true;
 //            buildCost = 5f;

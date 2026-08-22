@@ -4,6 +4,7 @@ import mindustry.content.TechTree;
 import mindustry.type.ItemStack;
 
 import static FusionPlanet.content.Fblocks.*;
+import static FusionPlanet.content.fPlanets.*;
 import static mindustry.content.Items.*;
 
 public class FtechTree {
