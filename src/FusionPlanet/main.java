@@ -22,7 +22,7 @@ public class main extends Mod {
         Events.on(ClientLoadEvent.class, e -> {
             Time.runTask(10f, () -> {
                 BaseDialog dialog = new BaseDialog("frog");
-                dialog.cont.add("雷霆大青蛙").row();
+                dialog.cont.add("oh no").row();
                 dialog.cont.image(Core.atlas.find("FusionPlanet-frog")).pad(20f).row();
                 dialog.cont.button("I am blind", dialog::hide).size(200f, 50f);
                 dialog.show();

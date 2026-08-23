@@ -60,7 +60,7 @@ public class fPlanets {
         undevelopedZone.captureWave = 10;
         undevelopedZone.alwaysUnlocked = true;
 
-        undevelopedZone = new SectorPreset("abandoned-ferry", fusionPlanet, 1);
+        undevelopedZone = new SectorPreset("abandoned-ferry", fusionPlanet, 37);
         undevelopedZone.localizedName = "废弃渡口";
         undevelopedZone.description = "先驱留下的遗迹";
         undevelopedZone.difficulty = 3;
