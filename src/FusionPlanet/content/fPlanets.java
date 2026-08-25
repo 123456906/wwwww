@@ -1,24 +1,23 @@
 package FusionPlanet.content;
 
 import arc.graphics.Color;
-import arc.math.Mathf;
-import arc.math.geom.Mat3D;
-import arc.math.geom.Vec3;
-import arc.struct.Seq;
-import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Planets;
 import mindustry.game.Team;
 import mindustry.graphics.g3d.*;
-import mindustry.maps.generators.PlanetGenerator;
 import mindustry.type.Planet;
 import mindustry.type.SectorPreset;
-import mindustry.world.TileGen;
 import mindustry.world.meta.Env;
+
+import static FusionPlanet.ring.RingWorldPlanet.*;
+import static FusionPlanet.ring.RingWorldMesh.*;
+import static FusionPlanet.ring.RingWorldGrid.*;
+import static FusionPlanet.ring.DysonRingMesh.*;
 
 public class fPlanets {
     public static Planet fusionPlanet;
     public static SectorPreset undevelopedZone;
+    private static final float ringGlowOffset = 0.008f;
 
     public static void load() {
         fusionPlanet = new Planet("fusion-planet", Planets.sun, 1f, 2);
@@ -38,45 +37,18 @@ public class fPlanets {
 
         fusionPlanet.meshLoader = () -> new HexMesh(fusionPlanet, 5);
 
-        fusionPlanet.cloudMeshLoader = () -> {
-            Seq<GenericMesh> meshes = new Seq<>();
+        Color ringColor1 = Color.valueOf("88aacc");
+        Color ringColor2 = Color.valueOf("667799");
+        Color glowColor = Color.valueOf("aaccee");
 
-            int segments = 36;
-            float ringWidth = 0.3f;
-            float ringHeight = 0.03f;
-            float[] radii = {1.15f, 1.35f, 1.55f};
-            Color[] colors = {
-                    Color.valueOf("8899aa"),
-                    Color.valueOf("99aabb"),
-                    Color.valueOf("aabbcc")
-            };
-            Color tint = Color.valueOf("556677");
-
-            for (int ringIdx = 0; ringIdx < radii.length; ringIdx++) {
-                float radius = radii[ringIdx];
-                Color c = colors[ringIdx];
-                for (int i = 0; i < segments; i++) {
-                    float angle = (i / (float)segments) * 360f;
-                    NoiseMesh segment = new NoiseMesh(
-                            fusionPlanet, i + ringIdx * 1000 + 200, 1,
-                            ringWidth, 2, 0.5f, 0.4f, 12f,
-                            c, tint, 2, 0.5f, 0.3f, 0.3f
-                    );
-                    Mat3D mat = new Mat3D();
-                    mat.setToTranslation(new Vec3(0, 0, radius));
-                    mat.rotate(0, 1, 0, angle);
-                    Mat3D tilt = new Mat3D();
-                    tilt.rotate(1, 0, 0, 25);
-                    mat.mul(tilt);
-                    Mat3D flatten = new Mat3D();
-                    flatten.scale(1f, ringHeight / ringWidth, 1f);
-                    mat.mul(flatten);
-                    meshes.add(new MatMesh(segment, mat));
-                }
-            }
-
-            return new MultiMesh(meshes.toArray(GenericMesh.class));
-        };
+        fusionPlanet.cloudMeshLoader = () -> new MultiMesh(
+                new DysonRingMesh(fusionPlanet, 1.45f, 0.12f, 512, ringColor1, ringColor2),
+                new DysonRingMesh(fusionPlanet, 1.65f, 0.10f, 768, ringColor1, ringColor2),
+                new DysonRingMesh(fusionPlanet, 1.85f, 0.08f, 1024, ringColor1, ringColor2),
+                new DysonRingMesh(fusionPlanet, 1.45f + ringGlowOffset, 0.06f, 512, glowColor, glowColor, true),
+                new DysonRingMesh(fusionPlanet, 1.65f + ringGlowOffset, 0.05f, 768, glowColor, glowColor, true),
+                new DysonRingMesh(fusionPlanet, 1.85f + ringGlowOffset, 0.04f, 1024, glowColor, glowColor, true)
+        );
 
         fusionPlanet.ruleSetter = r -> {
             r.waveTeam = Team.crux;
