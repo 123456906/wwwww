@@ -4,6 +4,7 @@ import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.math.geom.Mat3D;
 import arc.math.geom.Vec3;
+import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Planets;
@@ -32,19 +33,51 @@ public class fPlanets {
         fusionPlanet.atmosphereRadIn = 0.02f;
         fusionPlanet.atmosphereRadOut = 0.28f;
         fusionPlanet.allowLaunchToNumbered = true;
-        fusionPlanet.startSector = 1;
+        fusionPlanet.startSector = 32;
         fusionPlanet.defaultCore = Blocks.coreShard;
 
-        Color cloud1 = Color.valueOf("aabbdd");
-        cloud1.a = 0.4f;
-        Color cloud2 = Color.valueOf("8899bb");
-        cloud2.a = 0.3f;
-
-        fusionPlanet.cloudMeshLoader = () -> new MultiMesh(
-                new HexSkyMesh(fusionPlanet, 6, 0.15f, 0.12f, 5, cloud1, 2, 0.4f, 0.9f, 0.38f),
-                new HexSkyMesh(fusionPlanet, 4, 0.3f, 0.10f, 5, cloud2, 1, 0.3f, 1.0f, 0.4f)
-        );
         fusionPlanet.meshLoader = () -> new HexMesh(fusionPlanet, 5);
+
+        fusionPlanet.cloudMeshLoader = () -> {
+            Seq<GenericMesh> meshes = new Seq<>();
+
+            int segments = 36;
+            float ringWidth = 0.3f;
+            float ringHeight = 0.03f;
+            float[] radii = {1.15f, 1.35f, 1.55f};
+            Color[] colors = {
+                    Color.valueOf("8899aa"),
+                    Color.valueOf("99aabb"),
+                    Color.valueOf("aabbcc")
+            };
+            Color tint = Color.valueOf("556677");
+
+            for (int ringIdx = 0; ringIdx < radii.length; ringIdx++) {
+                float radius = radii[ringIdx];
+                Color c = colors[ringIdx];
+                for (int i = 0; i < segments; i++) {
+                    float angle = (i / (float)segments) * 360f;
+                    NoiseMesh segment = new NoiseMesh(
+                            fusionPlanet, i + ringIdx * 1000 + 200, 1,
+                            ringWidth, 2, 0.5f, 0.4f, 12f,
+                            c, tint, 2, 0.5f, 0.3f, 0.3f
+                    );
+                    Mat3D mat = new Mat3D();
+                    mat.setToTranslation(new Vec3(0, 0, radius));
+                    mat.rotate(0, 1, 0, angle);
+                    Mat3D tilt = new Mat3D();
+                    tilt.rotate(1, 0, 0, 25);
+                    mat.mul(tilt);
+                    Mat3D flatten = new Mat3D();
+                    flatten.scale(1f, ringHeight / ringWidth, 1f);
+                    mat.mul(flatten);
+                    meshes.add(new MatMesh(segment, mat));
+                }
+            }
+
+            return new MultiMesh(meshes.toArray(GenericMesh.class));
+        };
+
         fusionPlanet.ruleSetter = r -> {
             r.waveTeam = Team.crux;
             r.waves = true;
@@ -53,18 +86,11 @@ public class fPlanets {
             r.placeRangeCheck = true;
         };
 
-        undevelopedZone = new SectorPreset("undeveloped-zone", fusionPlanet, 1);
+        undevelopedZone = new SectorPreset("undeveloped-zone", fusionPlanet, 5);
         undevelopedZone.localizedName = "未开发区";
         undevelopedZone.description = "一片尚未被开发的区域";
         undevelopedZone.difficulty = 1;
-        undevelopedZone.captureWave = 10;
-        undevelopedZone.alwaysUnlocked = true;
-
-        undevelopedZone = new SectorPreset("abandoned-ferry", fusionPlanet, 37);
-        undevelopedZone.localizedName = "废弃渡口";
-        undevelopedZone.description = "先驱留下的遗迹";
-        undevelopedZone.difficulty = 3;
-        undevelopedZone.captureWave = 40;
+        undevelopedZone.captureWave = 20;
         undevelopedZone.alwaysUnlocked = true;
     }
 }

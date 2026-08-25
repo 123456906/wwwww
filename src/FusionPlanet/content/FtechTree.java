@@ -9,7 +9,7 @@ import static mindustry.content.Items.*;
 
 public class FtechTree {
     public static void load() {
-        TechTree.nodeRoot("fusion-planet", coreEvoke, () -> {
+        fPlanets.fusionPlanet.techTree = TechTree.nodeRoot("fusion-planet", coreEvoke, () -> {
 
             TechTree.nodeProduce(copper, () -> {});
             TechTree.nodeProduce(lead, () -> {});
