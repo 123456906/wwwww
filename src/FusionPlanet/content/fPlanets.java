@@ -1,5 +1,6 @@
 package FusionPlanet.content;
 
+import FusionPlanet.ring.DysonRingMesh;
 import arc.graphics.Color;
 import mindustry.content.Blocks;
 import mindustry.content.Planets;
