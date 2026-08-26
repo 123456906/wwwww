@@ -102,11 +102,11 @@ public class Fblocks {
 
             private float requiredTime(float health) {
                 if (health <= 1000f) {
-                    return 20f + 0.08f * (health - 500f);
+                    return 600f + 0.08f * (health - 500f);
                 } else if (health <= 5000f) {
-                    return 60f + 0.01f * (health - 1000f);
+                    return 1200f + 0.01f * (health - 1000f);
                 } else {
-                    return 100f + 0.04f * (health - 5000f);
+                    return 9999999999f + 0.04f * (health - 5000f);
                 }
             }
 
