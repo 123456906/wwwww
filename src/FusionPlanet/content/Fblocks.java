@@ -67,8 +67,15 @@ public class Fblocks {
             consumePower(50f);
         }
 
-        public class AssimilatorBuild extends Building {
+        public static class AssimilatorBuild extends Building {
+            private final float range;
+            private final float assimilateSpeed;
             private final ObjectMap<Unit, Float> progress = new ObjectMap<>();
+
+            public AssimilatorBuild(float range, float assimilateSpeed) {
+                this.range = range;
+                this.assimilateSpeed = assimilateSpeed;
+            }
 
             @Override
             public void updateTile() {
@@ -118,7 +125,7 @@ public class Fblocks {
 
         @Override
         public Building newBuilding() {
-            return new AssimilatorBuild();
+            return new AssimilatorBuild(range, assimilateSpeed);
         }
     }
 }
