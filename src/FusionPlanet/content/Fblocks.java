@@ -1,6 +1,5 @@
 package FusionPlanet.content;
 
-import arc.func.Cons;
 import arc.graphics.Color;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -67,27 +66,21 @@ public class Fblocks {
             consumePower(50f);
         }
 
-        public static class AssimilatorBuild extends Building {
-            private final float range;
-            private final float assimilateSpeed;
+        public class AssimilatorBuild extends Building {
             private final ObjectMap<Unit, Float> progress = new ObjectMap<>();
-
-            public AssimilatorBuild(float range, float assimilateSpeed) {
-                this.range = range;
-                this.assimilateSpeed = assimilateSpeed;
-            }
 
             @Override
             public void updateTile() {
+                Assimilator self = (Assimilator) block;
                 if (power == null || power.graph.getPowerBalance() < 0.1f) return;
 
-                Units.nearby(null, x, y, range, (Cons<Unit>) unit -> {
+                Units.nearby(team, x, y, self.range, unit -> {
                     if (unit == null || unit.dead() || unit.team() == team) return;
 
                     float health = unit.maxHealth();
                     float required = requiredTime(health);
                     float prog = progress.get(unit, 0f);
-                    prog += Time.delta * assimilateSpeed;
+                    prog += Time.delta * self.assimilateSpeed;
 
                     if (prog >= required) {
                         unit.team(team);
@@ -99,7 +92,7 @@ public class Fblocks {
                 });
 
                 for (Unit u : progress.keys().toSeq()) {
-                    if (u == null || u.dead() || u.team() == team || u.dst(x, y) > range) {
+                    if (u == null || u.dead() || u.team() == team || u.dst(x, y) > self.range) {
                         progress.remove(u);
                     }
                 }
@@ -118,14 +111,10 @@ public class Fblocks {
             @Override
             public void draw() {
                 super.draw();
-                Drawf.dashCircle(x, y, range, Color.valueOf("88aaff"));
-                Drawf.dashCircle(x, y, range, Color.valueOf("4488ff").a(0.25f));
+                Assimilator self = (Assimilator) block;
+                Drawf.dashCircle(x, y, self.range, Color.valueOf("88aaff"));
+                Drawf.dashCircle(x, y, self.range, Color.valueOf("4488ff").a(0.25f));
             }
-        }
-
-        @Override
-        public Building newBuilding() {
-            return new AssimilatorBuild(range, assimilateSpeed);
         }
     }
 }
