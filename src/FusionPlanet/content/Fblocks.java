@@ -1,5 +1,6 @@
 package FusionPlanet.content;
 
+import arc.func.Cons;
 import arc.graphics.Color;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -66,14 +67,16 @@ public class Fblocks {
             consumePower(50f);
         }
 
-        public class AssimilatorBuild extends Building {
+        public static class AssimilatorBuild extends Building {
             private final ObjectMap<Unit, Float> progress = new ObjectMap<>();
 
             @Override
             public void updateTile() {
+                // 检查电力
                 if (power == null || power.graph.getPowerBalance() < 0.1f) return;
 
-                Units.nearby(x, y, range, unit -> {
+                // 使用显式 Cons 类型避免 lambda 推断问题
+                Units.nearby(x, y, range, (Cons<Unit>) unit -> {
                     if (unit == null || unit.dead() || unit.team() == team) return;
 
                     float health = unit.maxHealth();
@@ -90,7 +93,7 @@ public class Fblocks {
                     }
                 });
 
-                // 清理离开范围的单位进度
+                // 清理离开范围的单位
                 for (Unit u : progress.keys().toSeq()) {
                     if (u == null || u.dead() || u.team() == team || u.dst(x, y) > range) {
                         progress.remove(u);
