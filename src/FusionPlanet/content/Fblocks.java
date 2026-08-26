@@ -72,9 +72,10 @@ public class Fblocks {
             @Override
             public void updateTile() {
                 Assimilator self = (Assimilator) block;
-                if (power == null || power.graph.getPowerBalance() < 0.1f) return;
 
-                Units.nearby(team, x, y, self.range, unit -> {
+                // 搜索所有队伍的单位（null = 全部）
+                Units.nearby(null, x, y, self.range, unit -> {
+                    // 跳过无效或己方单位
                     if (unit == null || unit.dead() || unit.team() == team) return;
 
                     float health = unit.maxHealth();
@@ -91,6 +92,7 @@ public class Fblocks {
                     }
                 });
 
+                // 清理离开范围或已死亡的单位进度
                 for (Unit u : progress.keys().toSeq()) {
                     if (u == null || u.dead() || u.team() == team || u.dst(x, y) > self.range) {
                         progress.remove(u);
@@ -112,8 +114,8 @@ public class Fblocks {
             public void draw() {
                 super.draw();
                 Assimilator self = (Assimilator) block;
-                Drawf.dashCircle(x, y, self.range, Color.valueOf("88aaff"));
-                Drawf.dashCircle(x, y, self.range, Color.valueOf("4488ff").a(0.25f));
+
+                Drawf.dashCircle(x, y, self.range, Color.white);
             }
         }
     }
