@@ -67,21 +67,14 @@ public class Fblocks {
             consumePower(50f);
         }
 
-        public static class AssimilatorBuild extends Building {
-            private final float range;
-            private final float assimilateSpeed;
+        public class AssimilatorBuild extends Building {
             private final ObjectMap<Unit, Float> progress = new ObjectMap<>();
-
-            public AssimilatorBuild(float range, float assimilateSpeed) {
-                this.range = range;
-                this.assimilateSpeed = assimilateSpeed;
-            }
 
             @Override
             public void updateTile() {
                 if (power == null || power.graph.getPowerBalance() < 0.1f) return;
 
-                Units.nearby(x, y, range, (Cons<Unit>) unit -> {
+                Units.nearby(null, x, y, range, (Cons<Unit>) unit -> {
                     if (unit == null || unit.dead() || unit.team() == team) return;
 
                     float health = unit.maxHealth();
@@ -125,7 +118,7 @@ public class Fblocks {
 
         @Override
         public Building newBuilding() {
-            return new AssimilatorBuild(range, assimilateSpeed);
+            return new AssimilatorBuild();
         }
     }
 }
