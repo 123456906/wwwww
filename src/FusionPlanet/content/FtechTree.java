@@ -1,5 +1,6 @@
 package FusionPlanet.content;
 
+import mindustry.content.Items;
 import mindustry.content.TechTree;
 import mindustry.type.ItemStack;
 
@@ -9,7 +10,15 @@ import static mindustry.content.Items.*;
 
 public class FtechTree {
     public static void load() {
-        fPlanets.fusionPlanet.techTree = TechTree.nodeRoot("fusion-planet", coreEvoke, () -> {
+        TechTree.nodeRoot("fusion-planet", coreEvoke, () -> {
+
+            TechTree.node(coreEvoke, () -> {
+                TechTree.node(assimilator, ItemStack.with(
+                        Items.copper, 10000,
+                        Items.lead, 10000,
+                        Items.silicon, 10000
+                ), () -> {});
+            });
 
             TechTree.nodeProduce(copper, () -> {});
             TechTree.nodeProduce(lead, () -> {});
