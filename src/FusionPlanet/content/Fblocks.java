@@ -45,9 +45,9 @@ public class Fblocks {
             health = 400;
             range = 60f;
             requirements(Category.effect, ItemStack.with(
-                    Items.copper, 200,
-                    Items.lead, 150,
-                    Items.silicon, 100
+                    Items.copper, 4000,
+                    Items.lead, 6000,
+                    Items.silicon, 6000
             ));
             alwaysUnlocked = true;
         }};
