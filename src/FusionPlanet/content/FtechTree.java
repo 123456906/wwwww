@@ -5,7 +5,7 @@ import mindustry.content.TechTree;
 import mindustry.type.ItemStack;
 
 import static FusionPlanet.content.Fblocks.*;
-import static FusionPlanet.content.fPlanets.*;
+import static FusionPlanet.content.Funits.*;
 import static mindustry.content.Items.*;
 
 public class FtechTree {
@@ -14,9 +14,16 @@ public class FtechTree {
 
             TechTree.node(coreEvoke, () -> {
                 TechTree.node(assimilator, ItemStack.with(
-                        Items.copper, 10000,
-                        Items.lead, 10000,
-                        Items.silicon, 10000
+                        copper, 2000,
+                        lead, 1500,
+                        Items.silicon, 1000
+                ), () -> {});
+
+                TechTree.node(falcon, ItemStack.with(
+                        copper, 3000,
+                        lead, 2000,
+                        Items.silicon, 2000,
+                        Items.titanium, 800
                 ), () -> {});
             });
 

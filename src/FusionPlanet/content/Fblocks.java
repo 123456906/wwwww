@@ -44,10 +44,11 @@ public class Fblocks {
             size = 3;
             health = 400;
             range = 60f;
+            description = "把血量在0到1000内的敌方单位在10到20秒内转化为我方单位并减少1/3的血量";
             requirements(Category.effect, ItemStack.with(
-                    Items.copper, 4000,
-                    Items.lead, 6000,
-                    Items.silicon, 6000
+                    Items.copper, 3000,
+                    Items.lead, 2000,
+                    Items.silicon, 2000
             ));
             alwaysUnlocked = true;
         }};
