@@ -2,6 +2,7 @@ package FusionPlanet;
 
 import FusionPlanet.content.Fblocks;
 import FusionPlanet.content.FtechTree;
+import FusionPlanet.content.Funits;
 import FusionPlanet.content.fPlanets;
 import arc.*;
 import arc.struct.ObjectSet;
@@ -36,6 +37,7 @@ public class main extends Mod {
 
         fPlanets.load();
         Fblocks.load();
+        Funits.load();
 
         Events.on(ContentInitEvent.class, e -> {
             Planet fusion = fPlanets.fusionPlanet;

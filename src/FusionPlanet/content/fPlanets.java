@@ -33,7 +33,7 @@ public class fPlanets {
         fusionPlanet.atmosphereRadIn = 0.02f;
         fusionPlanet.atmosphereRadOut = 0.28f;
         fusionPlanet.allowLaunchToNumbered = true;
-        fusionPlanet.startSector = 32;
+        fusionPlanet.startSector = 5;
         fusionPlanet.defaultCore = Blocks.coreShard;
 
         fusionPlanet.meshLoader = () -> new HexMesh(fusionPlanet, 5);
@@ -55,7 +55,6 @@ public class fPlanets {
             r.waveTeam = Team.crux;
             r.waves = true;
             r.env = Env.terrestrial;
-            r.winWave = 10;
             r.placeRangeCheck = true;
         };
 
@@ -63,6 +62,13 @@ public class fPlanets {
         undevelopedZone.localizedName = "未开发区";
         undevelopedZone.description = "一片尚未被开发的区域";
         undevelopedZone.difficulty = 1;
+        undevelopedZone.captureWave = 20;
+        undevelopedZone.alwaysUnlocked = true;
+
+        undevelopedZone = new SectorPreset("abandoned-ferry", fusionPlanet, 1);
+        undevelopedZone.localizedName = "废弃渡口";
+        undevelopedZone.description = "据说这里藏着先驱者曾经放在这里的武器";
+        undevelopedZone.difficulty = 3;
         undevelopedZone.captureWave = 20;
         undevelopedZone.alwaysUnlocked = true;
     }
