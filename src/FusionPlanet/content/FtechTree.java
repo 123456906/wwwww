@@ -25,6 +25,14 @@ public class FtechTree {
                         Items.silicon, 2000,
                         Items.titanium, 800
                 ), () -> {});
+
+                TechTree.node(summonTurret, ItemStack.with(
+                        copper, 500,
+                        lead, 350,
+                        Items.silicon, 250,
+                        Items.titanium, 150,
+                        Items.graphite, 100
+                ), () -> {});
             });
 
             TechTree.nodeProduce(copper, () -> {});
