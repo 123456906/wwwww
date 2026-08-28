@@ -8,7 +8,6 @@ import arc.util.Time;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.UnitTypes;
-import mindustry.entities.Effect;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.BasicBulletType;
 import mindustry.gen.Building;
@@ -64,6 +63,20 @@ public class Fblocks {
             alwaysUnlocked = true;
         }};
 
+        SummonBulletType copperBullet = new SummonBulletType(6f, 50) {{
+            ammoMultiplier = 3;
+        }};
+        SummonBulletType graphiteBullet = new SummonBulletType(7f, 70) {{
+            ammoMultiplier = 5;
+            reloadMultiplier = 0.7f;
+            rangeChange = 20f;
+        }};
+        SummonBulletType siliconBullet = new SummonBulletType(6.5f, 55) {{
+            ammoMultiplier = 6;
+            homingPower = 0.25f;
+            reloadMultiplier = 1.4f;
+        }};
+
         summonTurret = new SummonTurret("summon-turret") {{
             size = 3;
             health = 800;
@@ -82,49 +95,9 @@ public class Fblocks {
             coolantMultiplier = 2f;
 
             ammo(
-                    Items.copper, new BasicBulletType(6f, 50) {{
-                        width = 8f;
-                        height = 12f;
-                        lifetime = 60f;
-                        ammoMultiplier = 3;
-                        hitEffect = despawnEffect = Fx.hitBulletColor;
-                        hitColor = backColor = trailColor = Pal.copperAmmoBack;
-                        frontColor = Pal.copperAmmoFront;
-                        trailLength = 8;
-                        trailWidth = 2f;
-                        splashDamage = 20f;
-                        splashDamageRadius = 20f;
-                    }},
-                    Items.graphite, new BasicBulletType(7f, 70) {{
-                        width = 10f;
-                        height = 14f;
-                        ammoMultiplier = 5;
-                        lifetime = 55f;
-                        reloadMultiplier = 0.7f;
-                        rangeChange = 20f;
-                        hitEffect = despawnEffect = Fx.hitBulletColor;
-                        hitColor = backColor = trailColor = Pal.graphiteAmmoBack;
-                        frontColor = Pal.graphiteAmmoFront;
-                        trailLength = 10;
-                        trailWidth = 2.5f;
-                        splashDamage = 30f;
-                        splashDamageRadius = 25f;
-                    }},
-                    Items.silicon, new BasicBulletType(6.5f, 55) {{
-                        width = 8f;
-                        height = 10f;
-                        homingPower = 0.25f;
-                        reloadMultiplier = 1.4f;
-                        ammoMultiplier = 6;
-                        lifetime = 65f;
-                        trailLength = 12;
-                        trailWidth = 2f;
-                        hitEffect = despawnEffect = Fx.hitBulletColor;
-                        hitColor = backColor = trailColor = Pal.siliconAmmoBack;
-                        frontColor = Pal.siliconAmmoFront;
-                        splashDamage = 15f;
-                        splashDamageRadius = 15f;
-                    }}
+                    Items.copper, copperBullet,
+                    Items.graphite, graphiteBullet,
+                    Items.silicon, siliconBullet
             );
 
             requirements(Category.turret, ItemStack.with(
@@ -137,6 +110,37 @@ public class Fblocks {
             alwaysUnlocked = true;
             consumePower(50f);
         }};
+    }
+
+    public static class SummonBulletType extends BasicBulletType {
+        public SummonBulletType(float speed, float damage) {
+            super(speed, damage);
+            width = 12f;
+            height = 18f;
+            lifetime = 60f;
+            hitEffect = Fx.hitBulletColor;
+            despawnEffect = Fx.hitBulletColor;
+            shootEffect = Fx.shootBig;
+            smokeEffect = Fx.shootBigSmoke2;
+            trailLength = 12;
+            trailWidth = 3f;
+            backColor = Color.valueOf("ff9966");
+            frontColor = Color.valueOf("ffcc88");
+            trailColor = Color.valueOf("ff9966").a(0.6f);
+            splashDamage = 20f;
+            splashDamageRadius = 25f;
+        }
+
+        @Override
+        public void hit(Bullet b, float x, float y) {
+            super.hit(b, x, y);
+            if (b.data instanceof SummonTurret.SummonTurretBuild) {
+                ((SummonTurret.SummonTurretBuild) b.data).addDamage(b.damage);
+            }
+            Fx.shockwave.at(x, y, 15f, Color.valueOf("ffcc88"));
+            Fx.spawn.at(x, y);
+            Fx.hitBulletColor.at(x, y, 0, Color.valueOf("ff9966"));
+        }
     }
 
     public static class Assimilator extends Block {
@@ -216,21 +220,18 @@ public class Fblocks {
             private float damageAccumulated = 0f;
             private float glowTime = 0f;
 
-            @Override
-            public void handleBullet(Bullet bullet, float x, float y, float angle) {
-                super.handleBullet(bullet, x, y, angle);
-                damageAccumulated += bullet.damage;
-
-                Fx.shootBigSmoke2.at(x, y, angle);
-                Fx.shootSmall.at(x, y);
+            public void addDamage(float damage) {
+                damageAccumulated += damage;
+                Fx.shootBigSmoke2.at(x, y, rotation);
+                Fx.shootBig2.at(x, y);
 
                 if (damageAccumulated >= summonThreshold) {
                     if (falcon != null) {
-                        for (int i = 0; i < 5; i++) {
-                            Fx.spawn.at(x + Mathf.random(-20f, 20f), y + Mathf.random(-20f, 20f));
+                        for (int i = 0; i < 8; i++) {
+                            Fx.spawn.at(x + Mathf.random(-30f, 30f), y + Mathf.random(-30f, 30f));
                         }
                         Fx.flakExplosion.at(x, y);
-                        Fx.shockwave.at(x, y, 30f, Color.valueOf("ffcc88"));
+                        Fx.shockwave.at(x, y, 40f, Color.valueOf("ffcc88"));
                         Unit unit = falcon.create(team);
                         unit.set(x, y);
                         unit.add();
@@ -238,8 +239,14 @@ public class Fblocks {
                         Sounds.explosion.at(x, y);
                     }
                     damageAccumulated = 0f;
-                    glowTime = 60f;
+                    glowTime = 90f;
                 }
+            }
+
+            @Override
+            public void handleBullet(Bullet bullet, float x, float y, float angle) {
+                super.handleBullet(bullet, x, y, angle);
+                bullet.data = this;
             }
 
             @Override
@@ -250,7 +257,7 @@ public class Fblocks {
                 Drawf.dashCircle(x, y, range, Color.valueOf("ff9966").a(0.25f));
 
                 if (glowTime > 0f) {
-                    float glow = Mathf.clamp(glowTime / 30f);
+                    float glow = Mathf.clamp(glowTime / 45f);
                     Drawf.circles(x, y, 40f * glow, Color.valueOf("ffcc88").a(0.15f * glow));
                     Drawf.circles(x, y, 25f * glow, Color.valueOf("ff9966").a(0.2f * glow));
                     Drawf.dashCircle(x, y, 50f * glow, Color.valueOf("ffaa77").a(0.2f * glow));
