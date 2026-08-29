@@ -35,9 +35,9 @@ public class main extends Mod {
     public void loadContent(){
         Log.info("Loading some example content.");
 
-        fPlanets.load();
         Funits.load();
         Fblocks.load();
+        fPlanets.load();
 
         Events.on(ContentInitEvent.class, e -> {
             Planet fusion = fPlanets.fusionPlanet;
