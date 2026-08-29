@@ -7,29 +7,43 @@ import arc.struct.Seq;
 import arc.util.Time;
 import mindustry.content.Fx;
 import mindustry.content.Items;
+import mindustry.content.Liquids;
+import mindustry.content.StatusEffects;
 import mindustry.content.UnitTypes;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.BasicBulletType;
 import mindustry.gen.Building;
 import mindustry.gen.Bullet;
-import mindustry.gen.Unit;
 import mindustry.gen.Sounds;
+import mindustry.gen.Unit;
+import mindustry.graphics.CacheLayer;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.blocks.defense.turrets.ItemTurret;
+import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.storage.CoreBlock;
 
 import static FusionPlanet.content.Funits.falcon;
 
 public class Fblocks {
+
     public static Block coreEvoke;
     public static Block assimilator;
     public static Block summonTurret;
 
+    public static Floor blueGrass;
+    public static Floor purpleStone;
+    public static Floor cyanWater;
+    public static Floor indigoSand;
+    public static Floor magentaMoss;
+    public static Floor glowSpore;
+    public static Floor indigoIce;
+
     public static void load() {
+
         coreEvoke = new CoreBlock("core-evoke") {{
             size = 4;
             squareSprite = false;
@@ -110,37 +124,58 @@ public class Fblocks {
             alwaysUnlocked = true;
             consumePower(50f);
         }};
-    }
 
-    public static class SummonBulletType extends BasicBulletType {
-        public SummonBulletType(float speed, float damage) {
-            super(speed, damage);
-            width = 12f;
-            height = 18f;
-            lifetime = 60f;
-            hitEffect = Fx.hitBulletColor;
-            despawnEffect = Fx.hitBulletColor;
-            shootEffect = Fx.shootBig;
-            smokeEffect = Fx.shootBigSmoke2;
-            trailLength = 12;
-            trailWidth = 3f;
-            backColor = Color.valueOf("ff9966");
-            frontColor = Color.valueOf("ffcc88");
-            trailColor = Color.valueOf("ff9966").a(0.6f);
-            splashDamage = 20f;
-            splashDamageRadius = 25f;
-        }
+        blueGrass = new Floor("blue-grass") {{
+            variants = 3;
+            speedMultiplier = 1f;
+            mapColor.set(Color.valueOf("6688cc"));
+            supportsOverlay = true;
+        }};
 
-        @Override
-        public void hit(Bullet b, float x, float y) {
-            super.hit(b, x, y);
-            if (b.data instanceof SummonTurret.SummonTurretBuild) {
-                ((SummonTurret.SummonTurretBuild) b.data).addDamage(b.damage);
-            }
-            Fx.shockwave.at(x, y, 15f, Color.valueOf("ffcc88"));
-            Fx.spawn.at(x, y);
-            Fx.hitBulletColor.at(x, y, 0, Color.valueOf("ff9966"));
-        }
+        purpleStone = new Floor("purple-stone") {{
+            variants = 3;
+            speedMultiplier = 0.8f;
+            mapColor.set(Color.valueOf("9966cc"));
+        }};
+
+        cyanWater = new Floor("cyan-water") {{
+            speedMultiplier = 0.2f;
+            variants = 0;
+            liquidDrop = Liquids.water;
+            liquidMultiplier = 1.5f;
+            isLiquid = true;
+            status = StatusEffects.wet;
+            statusDuration = 120f;
+            drownTime = 200f;
+            cacheLayer = CacheLayer.water;
+            albedo = 0.9f;
+            supportsOverlay = true;
+            mapColor.set(Color.valueOf("44ccdd"));
+        }};
+
+        indigoSand = new Floor("indigo-sand") {{
+            variants = 3;
+            speedMultiplier = 0.9f;
+            mapColor.set(Color.valueOf("4455aa"));
+        }};
+
+        magentaMoss = new Floor("magenta-moss") {{
+            variants = 3;
+            speedMultiplier = 0.85f;
+            mapColor.set(Color.valueOf("cc88dd"));
+        }};
+
+        glowSpore = new Floor("glow-spore") {{
+            variants = 2;
+            speedMultiplier = 0.95f;
+            mapColor.set(Color.valueOf("88ddff"));
+        }};
+
+        indigoIce = new Floor("indigo-ice") {{
+            variants = 2;
+            speedMultiplier = 0.7f;
+            mapColor.set(Color.valueOf("334477"));
+        }};
     }
 
     public static class Assimilator extends Block {
@@ -206,6 +241,37 @@ public class Fblocks {
                 Drawf.dashCircle(x, y, self.range, Color.white);
                 Drawf.circles(x, y, self.range, Color.valueOf("ffffff").a(0.08f));
             }
+        }
+    }
+
+    public static class SummonBulletType extends BasicBulletType {
+        public SummonBulletType(float speed, float damage) {
+            super(speed, damage);
+            width = 12f;
+            height = 18f;
+            lifetime = 60f;
+            hitEffect = Fx.hitBulletColor;
+            despawnEffect = Fx.hitBulletColor;
+            shootEffect = Fx.shootBig;
+            smokeEffect = Fx.shootBigSmoke2;
+            trailLength = 12;
+            trailWidth = 3f;
+            backColor = Color.valueOf("ff9966");
+            frontColor = Color.valueOf("ffcc88");
+            trailColor = Color.valueOf("ff9966").a(0.6f);
+            splashDamage = 20f;
+            splashDamageRadius = 25f;
+        }
+
+        @Override
+        public void hit(Bullet b, float x, float y) {
+            super.hit(b, x, y);
+            if (b.data instanceof SummonTurret.SummonTurretBuild) {
+                ((SummonTurret.SummonTurretBuild) b.data).addDamage(b.damage);
+            }
+            Fx.shockwave.at(x, y, 15f, Color.valueOf("ffcc88"));
+            Fx.spawn.at(x, y);
+            Fx.hitBulletColor.at(x, y, 0, Color.valueOf("ff9966"));
         }
     }
 

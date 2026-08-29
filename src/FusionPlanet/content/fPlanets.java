@@ -17,6 +17,7 @@ import static FusionPlanet.ring.DysonRingMesh.*;
 
 public class fPlanets {
     public static Planet fusionPlanet;
+    public static Planet superPlanet;
     public static SectorPreset undevelopedZone;
     private static final float ringGlowOffset = 0.008f;
 
@@ -71,5 +72,29 @@ public class fPlanets {
         undevelopedZone.difficulty = 3;
         undevelopedZone.captureWave = 20;
         undevelopedZone.alwaysUnlocked = true;
+
+        superPlanet= new Planet("super-planet", Planets.sun, 1.2f, 2) {{
+            generator = new SuperPlanetGenerator();
+            meshLoader = () -> new HexMesh(this, 6);
+            localizedName = "宇宙无敌超级大霹力星";
+            visible = true;
+            accessible = true;
+            alwaysUnlocked = true;
+            bloom = false;
+            defaultEnv = Env.terrestrial;
+            atmosphereColor = Color.valueOf("6688cc");
+            atmosphereRadIn = 0.02f;
+            atmosphereRadOut = 0.3f;
+            allowLaunchToNumbered = true;
+            startSector = 0;
+            defaultCore = Blocks.coreShard;
+            ruleSetter = r -> {
+                r.waveTeam = Team.crux;
+                r.waves = true;
+                r.env = Env.terrestrial;
+                r.winWave = 10;
+                r.placeRangeCheck = true;
+            };
+        }};
     }
 }
