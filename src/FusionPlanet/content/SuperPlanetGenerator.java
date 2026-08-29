@@ -32,10 +32,10 @@ import static mindustry.Vars.*;
 public class SuperPlanetGenerator extends PlanetGenerator {
 
     // ---------- 基础参数 ----------
-    public float heightScale = 2.5f;      // 地形起伏幅度
-    public float waterLevel = 0.12f;      // 水位线（决定水域范围）
-    public float iceLevel = 0.55f;        // 冰原出现的海拔阈值
-    public float mossLevel = 0.35f;       // 苔藓出现的海拔上限
+    public float heightScale = 4f;      // 地形起伏幅度
+    public float waterLevel = 0.45f;      // 水位线（决定水域范围）
+    public float iceLevel = 1f;        // 冰原出现的海拔阈值
+    public float mossLevel = 0.5f;       // 苔藓出现的海拔上限
 
     // ---------- 地形表 (7行 x 7列) ----------
     // 行索引：纬度 (0=赤道, 6=极地)
@@ -82,7 +82,7 @@ public class SuperPlanetGenerator extends PlanetGenerator {
     public float getHeight(Vec3 pos) {
         float h = rawHeight(pos);
         // 保证至少为水位线，避免陆地完全淹没
-        return Math.max(h, waterLevel * 0.8f);
+        return Math.max(h, waterLevel * 0f);
     }
 
     // ---------- 方块选择 ----------
