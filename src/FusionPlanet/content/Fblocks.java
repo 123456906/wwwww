@@ -5,26 +5,24 @@ import arc.math.Mathf;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Time;
-import mindustry.content.Fx;
-import mindustry.content.Items;
-import mindustry.content.Liquids;
-import mindustry.content.StatusEffects;
-import mindustry.content.UnitTypes;
+import mindustry.content.*;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.BasicBulletType;
+import mindustry.entities.part.RegionPart;
 import mindustry.gen.Building;
 import mindustry.gen.Bullet;
 import mindustry.gen.Sounds;
 import mindustry.gen.Unit;
 import mindustry.graphics.CacheLayer;
 import mindustry.graphics.Drawf;
-import mindustry.graphics.Pal;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.blocks.defense.turrets.ItemTurret;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.storage.CoreBlock;
+import mindustry.world.draw.*;
+import mindustry.world.draw.DrawTurret;
 
 import static FusionPlanet.content.Funits.falcon;
 
@@ -123,6 +121,30 @@ public class Fblocks {
             ));
             alwaysUnlocked = true;
             consumePower(50f);
+
+            // 等价于 JSON 中的 drawer 配置
+            drawer = new DrawTurret() {{
+                parts = new Seq<>(new RegionPart[] {
+                        new RegionPart() {{
+                            mirror = false;
+                            x = 0;
+                            y = 0;
+                            suffix = "-1";
+                            layer = 51;
+                            moveX = -0.5f;
+                            moveY = -0.5f;
+                        }},
+                        new RegionPart() {{
+                            mirror = false;
+                            x = 0;
+                            y = 0;
+                            suffix = "-2";
+                            layer = 51;
+                            moveX = 0.5f;
+                            moveY = -0.5f;
+                        }}
+                });
+            }};
         }};
 
         blueGrass = new Floor("blue-grass") {{

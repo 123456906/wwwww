@@ -59,6 +59,10 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             Blocks.carbonStone
     };
 
+    private static final Block[][] tantrosArr = {
+            {Blocks.redmat, Blocks.redmat, Blocks.darksand, Blocks.bluemat, Blocks.bluemat}
+    };
+
     private final ObjectMap<Block, Block> decMap = new ObjectMap<>();
 
     public float heightScl = 0.9f;
@@ -110,6 +114,21 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         float temp = pos.dst(0, 0, 1f) * 2.2f
                 - Simplex.noise3d(seed, 8, 0.54f, 1.4f, 10f + pos.x, 10f + pos.y, 10f + pos.z) * 2.9f;
         return temp - 0.1f;
+    }
+
+    private float tantrosRawHeight(Vec3 pos) {
+        return Simplex.noise3d(seed + 1234, 8, 0.7f, 1f, pos.x, pos.y, pos.z);
+    }
+
+    private Block getTantrosBlock(Vec3 pos) {
+        float height = tantrosRawHeight(pos);
+        Vec3 tmp = new Vec3(pos).scl(2f);
+        float temp = Simplex.noise3d(seed + 1234, 8, 0.6, 1f / 2f, tmp.x, tmp.y + 99f, tmp.z);
+        height *= 1.2f;
+        height = Mathf.clamp(height);
+        int row = Mathf.clamp((int)(temp * tantrosArr.length), 0, tantrosArr.length - 1);
+        int col = Mathf.clamp((int)(height * tantrosArr[0].length), 0, tantrosArr[0].length - 1);
+        return tantrosArr[row][col];
     }
 
     private Block getSerpuloBlock(Vec3 pos) {
@@ -187,6 +206,11 @@ public class FusionPlanetGenerator extends PlanetGenerator {
     }
 
     public Block getBlock(Vec3 pos) {
+        float tantrosNoise = Simplex.noise3d(seed + 9999, 1, 0.5, 0.3, pos.x, pos.y, pos.z);
+        if (tantrosNoise > 0.8f) {
+            return getTantrosBlock(pos);
+        }
+
         float mixNoise = Simplex.noise3d(mixSeed, mixOctaves, 0.5f, mixFreq, pos.x * 2f + 10f, pos.y * 2f + 20f, pos.z * 2f);
         float mixVal = mixNoise * 0.5f + 0.5f;
         if (mixVal > mixThreshold) {
@@ -229,6 +253,15 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         } else {
             tile.block = Blocks.air;
+        }
+
+        if ((floor == Blocks.redmat || floor == Blocks.bluemat || floor == Blocks.darksand) && tile.block == Blocks.air) {
+            if (floor == Blocks.redmat && rand.chance(0.1)) {
+                tile.block = Blocks.redweed;
+            } else if (floor == Blocks.bluemat) {
+                if (rand.chance(0.03)) tile.block = Blocks.purbush;
+                else if (rand.chance(0.002)) tile.block = Blocks.yellowCoral;
+            }
         }
     }
 

@@ -19,6 +19,8 @@ public class fPlanets {
     public static Planet fusionPlanet;
     public static Planet superPlanet;
     public static SectorPreset undevelopedZone;
+    public static SectorPreset abandonedFerry;
+    public static SectorPreset myceliumBastion;
     private static final float ringGlowOffset = 0.008f;
 
     public static void load() {
@@ -66,20 +68,27 @@ public class fPlanets {
         undevelopedZone.captureWave = 20;
         undevelopedZone.alwaysUnlocked = true;
 
-        undevelopedZone = new SectorPreset("abandoned-ferry", fusionPlanet, 1);
-        undevelopedZone.localizedName = "废弃渡口";
-        undevelopedZone.description = "据说这里藏着先驱者曾经放在这里的武器";
-        undevelopedZone.difficulty = 3;
-        undevelopedZone.captureWave = 20;
-        undevelopedZone.alwaysUnlocked = true;
+        abandonedFerry = new SectorPreset("abandoned-ferry", fusionPlanet, 1);
+        abandonedFerry.localizedName = "废弃渡口";
+        abandonedFerry.description = "据说这里藏着先驱者曾经放在这里的武器（假的）";
+        abandonedFerry.difficulty = 3;
+        abandonedFerry.captureWave = 20;
+        abandonedFerry.alwaysUnlocked = true;
+
+        myceliumBastion = new SectorPreset("mycelium-bastion", fusionPlanet, 1);
+        myceliumBastion.localizedName = "菌丝壁垒";
+        myceliumBastion.description = "据说这里藏着先驱者曾经放在这里的武器";
+        myceliumBastion.difficulty = 6 ;
+        myceliumBastion.captureWave = 30;
+        myceliumBastion.alwaysUnlocked = true;
 
         superPlanet= new Planet("super-planet", Planets.sun, 1.2f, 2) {{
             generator = new SuperPlanetGenerator();
             meshLoader = () -> new HexMesh(this, 6);
             localizedName = "宇宙无敌超级大霹力星";
-            visible = true;
+            visible = false;
             accessible = true;
-            alwaysUnlocked = true;
+            alwaysUnlocked = false;
             bloom = false;
             defaultEnv = Env.terrestrial;
             atmosphereColor = Color.valueOf("6688cc");
