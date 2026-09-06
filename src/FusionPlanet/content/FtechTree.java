@@ -7,6 +7,7 @@ import mindustry.type.ItemStack;
 import static FusionPlanet.content.Fblocks.*;
 import static FusionPlanet.content.Funits.*;
 import static FusionPlanet.content.fPlanets.fusionPlanet;  // 导入行星实例
+import static FusionPlanet.content.fPlanets.*;
 import static mindustry.content.Items.*;
 
 public class FtechTree {
@@ -35,6 +36,12 @@ public class FtechTree {
                         Items.titanium, 150,
                         Items.graphite, 100
                 ), () -> {});
+            });
+
+            TechTree.node(undevelopedZone, ItemStack.with(copper, 1000), () -> {
+                TechTree.node(abandonedFerry, ItemStack.with(copper, 1000), () -> {
+                    TechTree.node(myceliumBastion, ItemStack.with(copper, 1000), () -> {});
+                });
             });
 
             TechTree.nodeProduce(copper, () -> {});
