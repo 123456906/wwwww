@@ -38,6 +38,7 @@ public class main extends Mod {
         Funits.load();
         Fblocks.load();
         fPlanets.load();
+        FtechTree.load();
 
         Events.on(ContentInitEvent.class, e -> {
             Planet fusion = fPlanets.fusionPlanet;
@@ -45,8 +46,6 @@ public class main extends Mod {
                 Log.err("Fusion planet is null!");
                 return;
             }
-
-            FtechTree.load();
 
             ObjectSet<Planet> allPlanets = new ObjectSet<>();
             allPlanets.add(Planets.sun);
