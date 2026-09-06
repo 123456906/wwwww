@@ -90,8 +90,8 @@ public class Fblocks {
         }};
 
         summonTurret = new SummonTurret("summon-turret") {{
-            size = 3;
-            health = 800;
+            size = 4;
+            health = 1000;
             range = 180f;
             reload = 15f;
             shootCone = 20f;

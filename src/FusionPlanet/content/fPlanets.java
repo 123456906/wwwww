@@ -73,14 +73,14 @@ public class fPlanets {
         abandonedFerry.description = "据说这里藏着先驱者曾经放在这里的武器（假的）";
         abandonedFerry.difficulty = 3;
         abandonedFerry.captureWave = 20;
-        abandonedFerry.alwaysUnlocked = true;
+        abandonedFerry.alwaysUnlocked = false;
 
         myceliumBastion = new SectorPreset("mycelium-bastion", fusionPlanet, 1);
         myceliumBastion.localizedName = "菌丝壁垒";
         myceliumBastion.description = "据说这里藏着先驱者曾经放在这里的武器";
         myceliumBastion.difficulty = 6 ;
         myceliumBastion.captureWave = 30;
-        myceliumBastion.alwaysUnlocked = true;
+        myceliumBastion.alwaysUnlocked = false;
 
         superPlanet= new Planet("super-planet", Planets.sun, 1.2f, 2) {{
             generator = new SuperPlanetGenerator();
