@@ -30,7 +30,7 @@ public class Funits {
         buildSpeed = 2f;
         itemCapacity = 60;
 
-        engineOffset = 22f;
+        engineOffset = 25f;
         engineSize = 4.5f;
         engineColor = Color.valueOf("ffffff");
 

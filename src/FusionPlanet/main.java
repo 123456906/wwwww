@@ -66,7 +66,7 @@ public class main extends Mod {
         Label title = new Label("FUSION PLANET");
         title.setFontScale(2.3f);
         title.setColor(Color.valueOf("7a8cbf"));
-        panel.add(title).padBottom(8f).row();
+        panel.add(title).padBottom(20f).row();
 
         Label subtitle = new Label("融 合 世 界");
         subtitle.setFontScale(1.05f);
