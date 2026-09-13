@@ -1,6 +1,7 @@
 package FusionPlanet.content;
 
 import arc.graphics.Color;
+import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -122,7 +123,6 @@ public class Fblocks {
             alwaysUnlocked = true;
             consumePower(50f);
 
-            // 等价于 JSON 中的 drawer 配置
             drawer = new DrawTurret() {{
                 parts = new Seq<>(new RegionPart[] {
                         new RegionPart() {{
@@ -260,8 +260,21 @@ public class Fblocks {
             public void draw() {
                 super.draw();
                 Assimilator self = (Assimilator) block;
-                Drawf.dashCircle(x, y, self.range, Color.white);
-                Drawf.circles(x, y, self.range, Color.valueOf("ffffff").a(0.08f));
+
+                float pulse = 0.75f + Mathf.sin(Time.time * 0.05f) * 0.25f;
+
+                Drawf.circles(x, y, self.range * 1.10f, Color.valueOf("aaddff").a(0.05f * pulse));
+                Drawf.circles(x, y, self.range * 1.04f, Color.valueOf("aaddff").a(0.09f * pulse));
+                Drawf.circles(x, y, self.range * 0.55f, Color.valueOf("aaddff").a(0.04f * pulse));
+
+                Lines.stroke(3.2f, Color.valueOf("aaddff").a(0.16f * pulse));
+                Lines.circle(x, y, self.range);
+
+                Lines.stroke(2f, Color.valueOf("bbddff").a(0.42f * pulse));
+                Lines.circle(x, y, self.range);
+
+                Lines.stroke(1f, Color.valueOf("ffffff").a(0.72f * pulse));
+                Lines.circle(x, y, self.range * 0.98f);
             }
         }
     }
@@ -340,15 +353,43 @@ public class Fblocks {
             @Override
             public void draw() {
                 super.draw();
+
                 float progress = Mathf.clamp(damageAccumulated / summonThreshold);
-                Drawf.circles(x, y, range * progress, Color.valueOf("ffcc88").a(0.15f));
-                Drawf.dashCircle(x, y, range, Color.valueOf("ff9966").a(0.25f));
+                float pulse = 0.8f + Mathf.sin(Time.time * 0.07f) * 0.2f;
+
+                Drawf.circles(x, y, range * 1.08f, Color.valueOf("ff9966").a(0.04f * pulse));
+                Drawf.circles(x, y, range * 1.03f, Color.valueOf("ffaa66").a(0.07f * pulse));
+                Drawf.circles(x, y, range * 0.55f, Color.valueOf("ffcc88").a(0.03f * pulse));
+
+                Lines.stroke(3f, Color.valueOf("ff9966").a(0.18f * pulse));
+                Lines.circle(x, y, range);
+
+                Lines.stroke(2f, Color.valueOf("ffaa66").a(0.42f * pulse));
+                Lines.circle(x, y, range);
+
+                Lines.stroke(1f, Color.valueOf("ffcc88").a(0.7f * pulse));
+                Lines.circle(x, y, range * 0.98f);
+
+                if (progress > 0f) {
+                    Lines.stroke(3.5f, Color.valueOf("ffcc88").a(0.85f));
+                    Lines.arc(x, y, range * 0.96f, progress, 0f);
+
+                    Lines.stroke(1.5f, Color.valueOf("ffffff").a(0.55f * progress));
+                    Lines.arc(x, y, range * 0.96f, progress, 0f);
+                }
 
                 if (glowTime > 0f) {
                     float glow = Mathf.clamp(glowTime / 45f);
-                    Drawf.circles(x, y, 40f * glow, Color.valueOf("ffcc88").a(0.15f * glow));
-                    Drawf.circles(x, y, 25f * glow, Color.valueOf("ff9966").a(0.2f * glow));
-                    Drawf.dashCircle(x, y, 50f * glow, Color.valueOf("ffaa77").a(0.2f * glow));
+
+                    Drawf.circles(x, y, 60f * glow, Color.valueOf("ffcc88").a(0.12f * glow));
+                    Drawf.circles(x, y, 40f * glow, Color.valueOf("ffaa66").a(0.15f * glow));
+
+                    Lines.stroke(4f * glow, Color.valueOf("ffcc88").a(0.65f * glow));
+                    Lines.circle(x, y, 50f * glow);
+
+                    Lines.stroke(2f * glow, Color.valueOf("ffffff").a(0.5f * glow));
+                    Lines.circle(x, y, 35f * glow);
+
                     glowTime -= Time.delta;
                 }
             }
