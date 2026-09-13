@@ -81,9 +81,9 @@ public class Funits {
         weapons.add(new Weapon("nova-sap") {{
             bullet = new SapBulletType() {{
                 lifetime = 35f;
-                damage = 23f;
+                damage = 20f;
                 knockback = -1.24f;
-                length = 75f;
+                length = 200f;
                 hitColor = Color.valueOf("ffffff");
                 color = Color.valueOf("ffffff");
                 lightRadius = 18f;
