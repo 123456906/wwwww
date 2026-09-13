@@ -40,6 +40,18 @@ public class main extends Mod {
         });
     }
 
+    private String getModVersion(){
+        try {
+            Mods.ModMeta m = Vars.mods.getMod(main.class).meta;
+            if (m != null && m.version != null) {
+                return m.version;
+            }
+        } catch (Exception ex) {
+            Log.err("Failed to read mod version: " + ex);
+        }
+        return "dev";
+    }
+
     private void showWelcomeDialog(){
         BaseDialog dialog = new BaseDialog("Fusion Planet");
         dialog.setColor(Color.valueOf("0a0e1a"));
@@ -71,8 +83,11 @@ public class main extends Mod {
             logoRegion = Core.atlas.find("logo");
         }
         if (logoRegion.found()) {
+            float aspect = logoRegion.height / (float) logoRegion.width;
+            float logoWidth = 420f;
+            float logoHeight = logoWidth * aspect;
             Image logo = new Image(logoRegion);
-            panel.add(logo).maxSize(200f).pad(8f).padBottom(22f).row();
+            panel.add(logo).size(logoWidth, logoHeight).pad(8f).padBottom(22f).row();
         }
 
         Label desc = new Label("黄队的火种已坠落于双环之下");
@@ -98,7 +113,7 @@ public class main extends Mod {
             }
         }).size(430f, 42f).padBottom(6f).row();
 
-        Label version = new Label("v1.0  ·  Fusion Planet  ·  by Fusion Team");
+        Label version = new Label("v" + getModVersion() + "  ·  Fusion Planet  ·  by Fusion Team");
         version.setFontScale(0.62f);
         version.setColor(Color.valueOf("3d4a5e"));
         panel.add(version).padTop(14f).padBottom(18f).row();
@@ -107,7 +122,7 @@ public class main extends Mod {
 
         dialog.cont.update(() -> {
             animTime += Time.delta;
-            float p = (Mathf.sin(animTime * 0.8f) + 1f) * 0.5f;
+            float p = (Mathf.sin(animTime * 20f) + 1f) * 0.5f;
 
             titleColor.set(Color.valueOf("7a8cbf")).lerp(Color.valueOf("eef4ff"), p * 0.5f);
             title.setColor(titleColor);
