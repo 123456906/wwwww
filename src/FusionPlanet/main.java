@@ -53,30 +53,14 @@ public class main extends Mod {
     }
 
     private void showWelcomeDialog(){
-        BaseDialog dialog = new BaseDialog("Fusion Planet");
+        BaseDialog dialog = new BaseDialog("FUSION PLANET LAUNCHER");
         dialog.setColor(Color.valueOf("0a0e1a"));
 
-        Table panel = new Table();
-        panel.setBackground(Styles.black8);
+        Table root = new Table();
+        root.setBackground(Styles.black8);
 
-        panel.add(new Image(Core.atlas.white())).height(2f).width(380f)
-                .color(Color.valueOf("7a8cbf"))
-                .padTop(24f).padBottom(20f).row();
-
-        Label title = new Label("FUSION PLANET");
-        title.setFontScale(2.3f);
-        title.setColor(Color.valueOf("7a8cbf"));
-        panel.add(title).padBottom(20f).row();
-
-        Label subtitle = new Label("融 合 世 界");
-        subtitle.setFontScale(1.05f);
-        subtitle.setColor(Color.valueOf("aabbdd"));
-        panel.add(subtitle).padBottom(6f).row();
-
-        Label tag = new Label("FUSION BOUNDARY  ·  WORLD REMADE");
-        tag.setFontScale(0.7f);
-        tag.setColor(Color.valueOf("5a6a8a"));
-        panel.add(tag).padBottom(24f).row();
+        Table banner = new Table();
+        banner.setBackground(Styles.black6);
 
         TextureRegion logoRegion = Core.atlas.find("ui/logo");
         if (!logoRegion.found()) {
@@ -84,51 +68,110 @@ public class main extends Mod {
         }
         if (logoRegion.found()) {
             float aspect = logoRegion.height / (float) logoRegion.width;
-            float logoWidth = 420f;
-            float logoHeight = logoWidth * aspect;
-            Image logo = new Image(logoRegion);
-            panel.add(logo).size(logoWidth, logoHeight).pad(8f).padBottom(22f).row();
+            float w = 460f;
+            float h = w * aspect;
+            banner.add(new Image(logoRegion)).size(w, h).pad(10f);
+        } else {
+            banner.add(new Label("FUSION PLANET")).fontScale(2f).pad(40f);
         }
+        root.add(banner).width(500f).padTop(12f).row();
+
+        Table titleBlock = new Table();
+        titleBlock.setBackground(Styles.black6);
+
+        Label title = new Label("FUSION PLANET");
+        title.setFontScale(1.9f);
+        title.setColor(Color.valueOf("7a8cbf"));
+        titleBlock.add(title).padTop(10f).padBottom(2f).row();
+
+        Label subtitle = new Label("融 合 世 界");
+        subtitle.setFontScale(0.95f);
+        subtitle.setColor(Color.valueOf("aabbdd"));
+        titleBlock.add(subtitle).padBottom(4f).row();
+
+        Label tag = new Label("FUSION BOUNDARY  ·  WORLD REMADE");
+        tag.setFontScale(0.65f);
+        tag.setColor(Color.valueOf("5a6a8a"));
+        titleBlock.add(tag).padBottom(10f).row();
+
+        root.add(titleBlock).width(500f).padTop(6f).padBottom(8f).row();
+
+        Table descCard = new Table();
+        descCard.setBackground(Styles.black6);
 
         Label desc = new Label("黄队的火种已坠落于双环之下");
-        desc.setFontScale(0.95f);
+        desc.setFontScale(0.88f);
         desc.setColor(Color.valueOf("c8d0e0"));
-        panel.add(desc).pad(2f).row();
+        descCard.add(desc).padTop(10f).padBottom(2f).row();
 
         Label desc2 = new Label("幽灵在夜里游荡，白影在深处低语");
-        desc2.setFontScale(0.85f);
+        desc2.setFontScale(0.82f);
         desc2.setColor(Color.valueOf("8898b8"));
-        panel.add(desc2).pad(2f).padBottom(24f).row();
+        descCard.add(desc2).padBottom(10f).row();
 
-        Table mainRow = new Table();
-        mainRow.button("开 始 探 索", dialog::hide).size(240f, 52f).padRight(8f);
-        mainRow.button("背 景 故 事", this::showStoryDialog).size(180f, 52f);
-        panel.add(mainRow).padBottom(10f).row();
+        root.add(descCard).width(500f).padBottom(8f).row();
 
-        panel.button("加入 QQ 群 / 反馈", () -> {
+        Table btnRow = new Table();
+        btnRow.setBackground(Styles.black6);
+        btnRow.button("开始探索", dialog::hide).size(230f, 46f).pad(10f).padRight(4f);
+        btnRow.button("背景故事", this::showStoryDialog).size(230f, 46f).pad(10f).padLeft(4f);
+        root.add(btnRow).width(500f).padBottom(8f).row();
+
+        Table qqRow = new Table();
+        qqRow.setBackground(Styles.black6);
+        qqRow.button("加入 QQ 群 / 反馈", () -> {
             try {
                 Core.app.openURI(QQ_URL);
             } catch (Exception ex) {
                 Log.err("Failed to open URL: " + QQ_URL);
             }
-        }).size(430f, 42f).padBottom(6f).row();
+        }).size(480f, 40f).pad(10f);
+        root.add(qqRow).width(500f).padBottom(8f).row();
 
-        Label version = new Label("v" + getModVersion() + "  ·  Fusion Planet  ·  by Fusion Team");
-        version.setFontScale(0.62f);
-        version.setColor(Color.valueOf("3d4a5e"));
-        panel.add(version).padTop(14f).padBottom(18f).row();
+        Table statusBar = new Table();
+        statusBar.setBackground(Styles.black6);
 
-        dialog.cont.add(panel).width(480f).pad(10f);
+        Label statusDot = new Label("●");
+        statusDot.setColor(Color.valueOf("66cc88"));
+        statusDot.setFontScale(0.7f);
+        statusBar.add(statusDot).padLeft(12f).padRight(6f);
+
+        Label statusText = new Label("READY");
+        statusText.setColor(Color.valueOf("88a8b8"));
+        statusText.setFontScale(0.7f);
+        statusBar.add(statusText).left();
+
+        statusBar.add().expandX();
+
+        Label verLabel = new Label("v" + getModVersion() + "  ·  Fusion Team");
+        verLabel.setFontScale(0.68f);
+        verLabel.setColor(Color.valueOf("5a6a8a"));
+        statusBar.add(verLabel).padRight(10f);
+
+        Label clock = new Label("--:--:--");
+        clock.setFontScale(0.68f);
+        clock.setColor(Color.valueOf("88a8b8"));
+        statusBar.add(clock).padRight(12f);
+
+        root.add(statusBar).width(500f).padBottom(10f).row();
+
+        dialog.cont.add(root).width(520f).pad(0f);
 
         dialog.cont.update(() -> {
             animTime += Time.delta;
-            float p = (Mathf.sin(animTime * 20f) + 1f) * 0.5f;
+            float p = (Mathf.sin(animTime * Mathf.PI2) + 1f) * 0.5f;
 
             titleColor.set(Color.valueOf("7a8cbf")).lerp(Color.valueOf("eef4ff"), p * 0.5f);
             title.setColor(titleColor);
 
             subColor.set(Color.valueOf("aabbdd")).lerp(Color.valueOf("ffffff"), p * 0.3f);
             subtitle.setColor(subColor);
+
+            long ms = System.currentTimeMillis();
+            int sec = (int)((ms / 1000) % 60);
+            int min = (int)((ms / 60000) % 60);
+            int hour = (int)((ms / 3600000) % 24);
+            clock.setText(String.format("%02d:%02d:%02d", hour, min, sec));
         });
 
         dialog.show();
@@ -149,27 +192,34 @@ public class main extends Mod {
         content.add(new Image(Core.atlas.white())).height(1f).width(480f)
                 .color(Color.valueOf("3a4a6a")).padBottom(12f).row();
 
-        addChapter(content, "第一章 · 逃离赛普罗",
-                "黄队残部在赛普罗的最后一次围剿中全军溃败。CRUX 的红色洪流吞没了他们每一座核心，" +
-                        "仅存的运输舰带着最后的种子与工程兵，跃入深空。他们不知道航向，只知道身后再无归途。");
+        addChapter(content, "第一章 · 先驱者",
+                "赛普罗并非无主之地。在红与黄的旗帜升起之前，这颗星球属于先驱者——" +
+                        "一个早已被遗忘的名字。他们建立了第一批核心，点亮了第一座发射井。" +
+                        "后来他们分裂了。");
 
-        addChapter(content, "第二章 · 融合星球",
-                "跃迁引擎在未知星域崩解。他们坠落到一颗被双环包裹的行星——大气中弥漫着赛普罗与埃里克尔" +
-                        "都未曾记录的元素。这里的土壤会融合、会生长、会记忆。他们把这颗星球命名为「融合世界」。");
+        addChapter(content, "第二章 · 红与黄",
+                "先驱者的血脉一分为二。红队执掌铁与火，黄队笃信光与秩序。" +
+                        "分歧演变为战争，战争又演变为流亡。当 CRUX 的红色洪流吞没最后一座黄队核心时，" +
+                        "残余的运输舰跃入深空——身后再无归途。");
 
-        addChapter(content, "第三章 · 幽灵部队",
+        addChapter(content, "第三章 · 融合星球",
+                "跃迁引擎在未知星域崩解。黄队坠落到一颗被双环包裹的行星——" +
+                        "大气中弥漫着赛普罗与埃里克尔都未曾记录的元素。土壤会融合、会生长、会记忆。" +
+                        "他们把这颗星球命名为「融合世界」。");
+
+        addChapter(content, "第四章 · 幽灵部队",
                 "第一次遭遇发生在第八个夜晚。哨塔报告「红色单位接近」，但雷达上没有任何信号。" +
-                        "火力覆盖后，只剩下被腐蚀的地面和一串不属于任何已知队伍的编码。\n" +
+                        "火力覆盖后，只剩下腐蚀的地面和一串不属于任何已知队伍的编码。\n" +
                         "他们称其为「幽灵」——CRUX 的幽灵。\n" +
                         "诡异的是，CRUX 官方通讯中从未提及这颗星球，也从未承认派出过任何部队。" +
                         "幽灵从何而来？连 CRUX 自己都不知道。");
 
-        addChapter(content, "第四章 · 白影踪迹",
-                "更深的矿井里，黄队发现了不属于 CRUX、也不属于赛普罗的遗迹——纯白色的装甲、" +
-                        "早已断电的核心、以及墙壁上刻着的陌生文字。\n" +
-                        "先驱者。这颗星球的原住民。\n" +
-                        "他们曾在这里建立文明，如今只剩下空荡的方尖碑与沉默的数据核心。" +
-                        "他们是谁？他们为什么消失？");
+        addChapter(content, "第五章 · 白影重临",
+                "更深的矿井里，黄队发现了不属于 CRUX、也不属于当代赛普罗的遗迹——" +
+                        "纯白色的装甲、早已断电的核心、以及墙壁上刻着的陌生文字。\n" +
+                        "先驱者。这颗星球最早的居民。\n" +
+                        "他们曾经在这里建立文明，如今只剩下空荡的方尖碑与沉默的数据核心。" +
+                        "他们是谁？他们为什么消失？他们和幽灵之间，又有什么联系？");
 
         addChapter(content, "终章 · 融合边界",
                 "黄队在这里竖起新的核心。他们不再是逃亡者——他们是这颗行星的新居民。\n" +

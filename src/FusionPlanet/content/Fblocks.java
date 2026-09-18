@@ -257,8 +257,7 @@ public class Fblocks {
             }
 
             @Override
-            public void draw() {
-                super.draw();
+            public void drawSelect() {
                 Assimilator self = (Assimilator) block;
 
                 float pulse = 0.75f + Mathf.sin(Time.time * 0.05f) * 0.25f;
@@ -354,6 +353,22 @@ public class Fblocks {
             public void draw() {
                 super.draw();
 
+                if (glowTime > 0f) {
+                    float glow = Mathf.clamp(glowTime / 45f);
+
+                    Drawf.circles(x, y, 60f * glow, Color.valueOf("ffcc88").a(0.12f * glow));
+                    Drawf.circles(x, y, 40f * glow, Color.valueOf("ffaa66").a(0.15f * glow));
+
+                    Lines.stroke(4f * glow, Color.valueOf("ffcc88").a(0.65f * glow));
+                    Lines.circle(x, y, 50f * glow);
+
+                    Lines.stroke(2f * glow, Color.valueOf("ffffff").a(0.5f * glow));
+                    Lines.circle(x, y, 35f * glow);
+                }
+            }
+
+            @Override
+            public void drawSelect() {
                 float progress = Mathf.clamp(damageAccumulated / summonThreshold);
                 float pulse = 0.8f + Mathf.sin(Time.time * 0.07f) * 0.2f;
 
@@ -376,21 +391,6 @@ public class Fblocks {
 
                     Lines.stroke(1.5f, Color.valueOf("ffffff").a(0.55f * progress));
                     Lines.arc(x, y, range * 0.96f, progress, 0f);
-                }
-
-                if (glowTime > 0f) {
-                    float glow = Mathf.clamp(glowTime / 45f);
-
-                    Drawf.circles(x, y, 60f * glow, Color.valueOf("ffcc88").a(0.12f * glow));
-                    Drawf.circles(x, y, 40f * glow, Color.valueOf("ffaa66").a(0.15f * glow));
-
-                    Lines.stroke(4f * glow, Color.valueOf("ffcc88").a(0.65f * glow));
-                    Lines.circle(x, y, 50f * glow);
-
-                    Lines.stroke(2f * glow, Color.valueOf("ffffff").a(0.5f * glow));
-                    Lines.circle(x, y, 35f * glow);
-
-                    glowTime -= Time.delta;
                 }
             }
 

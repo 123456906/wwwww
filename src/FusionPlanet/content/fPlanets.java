@@ -41,17 +41,13 @@ public class fPlanets {
 
         fusionPlanet.meshLoader = () -> new HexMesh(fusionPlanet, 5);
 
-        Color ringColor1 = Color.valueOf("88aacc");
-        Color ringColor2 = Color.valueOf("667799");
-        Color glowColor = Color.valueOf("aaccee");
+        Color ringColor1 = Color.valueOf("4C4C4C");
+        Color ringColor2 = Color.valueOf("59B368");
+        Color glowColor = Color.valueOf("59B368");
 
         fusionPlanet.cloudMeshLoader = () -> new MultiMesh(
-                new DysonRingMesh(fusionPlanet, 1.45f, 0.12f, 512, ringColor1, ringColor2),
-                new DysonRingMesh(fusionPlanet, 1.65f, 0.10f, 768, ringColor1, ringColor2),
-                new DysonRingMesh(fusionPlanet, 1.85f, 0.08f, 1024, ringColor1, ringColor2),
-                new DysonRingMesh(fusionPlanet, 1.45f + ringGlowOffset, 0.06f, 512, glowColor, glowColor, true),
-                new DysonRingMesh(fusionPlanet, 1.65f + ringGlowOffset, 0.05f, 768, glowColor, glowColor, true),
-                new DysonRingMesh(fusionPlanet, 1.85f + ringGlowOffset, 0.04f, 1024, glowColor, glowColor, true)
+                new DysonRingMesh(fusionPlanet, 1.65f, 0.30f, 768, ringColor1, ringColor2),
+                new DysonRingMesh(fusionPlanet, 1.65f + ringGlowOffset, 0.12f, 768, glowColor, glowColor, true)
         );
 
         fusionPlanet.ruleSetter = r -> {
@@ -78,7 +74,7 @@ public class fPlanets {
         myceliumBastion = new SectorPreset("mycelium-bastion", fusionPlanet, 1);
         myceliumBastion.localizedName = "菌丝壁垒";
         myceliumBastion.description = "据说这里藏着先驱者曾经放在这里的武器";
-        myceliumBastion.difficulty = 6 ;
+        myceliumBastion.difficulty = 6;
         myceliumBastion.captureWave = 30;
         myceliumBastion.alwaysUnlocked = false;
 
