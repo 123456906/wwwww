@@ -53,14 +53,51 @@ public class main extends Mod {
     }
 
     private void showWelcomeDialog(){
-        BaseDialog dialog = new BaseDialog("FUSION PLANET LAUNCHER");
-        dialog.setColor(Color.valueOf("0a0e1a"));
+        BaseDialog dialog = new BaseDialog("");
+        dialog.setColor(Color.valueOf("07090f"));
 
-        Table root = new Table();
-        root.setBackground(Styles.black8);
+        Table window = new Table();
+        window.setBackground(Styles.black8);
 
-        Table banner = new Table();
-        banner.setBackground(Styles.black6);
+        // ========== 顶部标题栏 ==========
+        Table titleBar = new Table();
+        titleBar.setBackground(Styles.black6);
+
+        Label barTitle = new Label("  FUSION PLANET LAUNCHER");
+        barTitle.setFontScale(0.78f);
+        barTitle.setColor(Color.valueOf("8899bb"));
+        titleBar.add(barTitle).left().padLeft(10f).padTop(8f).padBottom(8f);
+
+        titleBar.add().expandX();
+
+        Label dot1 = new Label("●");
+        dot1.setColor(Color.valueOf("66cc88"));
+        dot1.setFontScale(0.6f);
+        titleBar.add(dot1).padRight(8f).padTop(8f).padBottom(8f);
+
+        Label dot2 = new Label("●");
+        dot2.setColor(Color.valueOf("ccaa44"));
+        dot2.setFontScale(0.6f);
+        titleBar.add(dot2).padRight(8f).padTop(8f).padBottom(8f);
+
+        Table closeBtn = new Table();
+        closeBtn.setBackground(Styles.black6);
+        Label closeLabel = new Label("✕");
+        closeLabel.setFontScale(1.1f);
+        closeLabel.setColor(Color.valueOf("ff5555"));
+        closeBtn.add(closeLabel).pad(6f).padLeft(10f).padRight(10f);
+        closeBtn.clicked(dialog::hide);
+        closeBtn.hovered(() -> closeBtn.setBackground(Styles.black3));
+        titleBar.add(closeBtn).padTop(4f).padBottom(4f).padRight(4f);
+
+        window.add(titleBar).width(760f).height(36f).colspan(2).row();
+
+        // ========== 主体：左右两栏 ==========
+        Table body = new Table();
+
+        // ---------- 左栏：Logo + 品牌 ----------
+        Table left = new Table();
+        left.setBackground(Styles.black6);
 
         TextureRegion logoRegion = Core.atlas.find("ui/logo");
         if (!logoRegion.found()) {
@@ -68,94 +105,108 @@ public class main extends Mod {
         }
         if (logoRegion.found()) {
             float aspect = logoRegion.height / (float) logoRegion.width;
-            float w = 460f;
+            float w = 320f;
             float h = w * aspect;
-            banner.add(new Image(logoRegion)).size(w, h).pad(10f);
+            left.add(new Image(logoRegion)).size(w, h).padTop(24f).padBottom(16f).row();
         } else {
-            banner.add(new Label("FUSION PLANET")).fontScale(2f).pad(40f);
+            left.add(new Label("FUSION")).fontScale(2.6f)
+                    .color(Color.valueOf("7a8cbf"))
+                    .padTop(40f).padBottom(8f).row();
         }
-        root.add(banner).width(500f).padTop(12f).row();
-
-        Table titleBlock = new Table();
-        titleBlock.setBackground(Styles.black6);
 
         Label title = new Label("FUSION PLANET");
-        title.setFontScale(1.9f);
+        title.setFontScale(1.55f);
         title.setColor(Color.valueOf("7a8cbf"));
-        titleBlock.add(title).padTop(10f).padBottom(2f).row();
+        left.add(title).padBottom(4f).row();
 
         Label subtitle = new Label("融 合 世 界");
         subtitle.setFontScale(0.95f);
         subtitle.setColor(Color.valueOf("aabbdd"));
-        titleBlock.add(subtitle).padBottom(4f).row();
+        left.add(subtitle).padBottom(4f).row();
 
-        Label tag = new Label("FUSION BOUNDARY  ·  WORLD REMADE");
-        tag.setFontScale(0.65f);
+        Label tag = new Label("FUSION BOUNDARY · WORLD REMADE");
+        tag.setFontScale(0.6f);
         tag.setColor(Color.valueOf("5a6a8a"));
-        titleBlock.add(tag).padBottom(10f).row();
+        left.add(tag).padBottom(20f).row();
 
-        root.add(titleBlock).width(500f).padTop(6f).padBottom(8f).row();
+        left.add(new Image(Core.atlas.white())).height(1f).width(240f)
+                .color(Color.valueOf("2a3a5a")).padBottom(16f).row();
 
-        Table descCard = new Table();
-        descCard.setBackground(Styles.black6);
+        Label statusLine = new Label("STATUS  ·  ONLINE");
+        statusLine.setFontScale(0.62f);
+        statusLine.setColor(Color.valueOf("66cc88"));
+        left.add(statusLine).padBottom(6f).row();
 
-        Label desc = new Label("黄队的火种已坠落于双环之下");
-        desc.setFontScale(0.88f);
-        desc.setColor(Color.valueOf("c8d0e0"));
-        descCard.add(desc).padTop(10f).padBottom(2f).row();
+        Label verLabel = new Label("v" + getModVersion() + "  ·  Fusion Team");
+        verLabel.setFontScale(0.62f);
+        verLabel.setColor(Color.valueOf("5a6a8a"));
+        left.add(verLabel).padBottom(24f).row();
 
-        Label desc2 = new Label("幽灵在夜里游荡，白影在深处低语");
-        desc2.setFontScale(0.82f);
-        desc2.setColor(Color.valueOf("8898b8"));
-        descCard.add(desc2).padBottom(10f).row();
+        // ---------- 右栏：内容 + 按钮 ----------
+        Table right = new Table();
+        right.setBackground(Styles.black6);
 
-        root.add(descCard).width(500f).padBottom(8f).row();
+        Label welcome = new Label("WELCOME");
+        welcome.setFontScale(1.3f);
+        welcome.setColor(Color.valueOf("eef4ff"));
+        right.add(welcome).left().padLeft(24f).padTop(24f).padBottom(4f).row();
+
+        Label welcomeCn = new Label("欢迎回到融合世界");
+        welcomeCn.setFontScale(0.85f);
+        welcomeCn.setColor(Color.valueOf("8899bb"));
+        right.add(welcomeCn).left().padLeft(24f).padBottom(20f).row();
+
+        right.add(new Image(Core.atlas.white())).height(1f).width(320f)
+                .color(Color.valueOf("2a3a5a")).padBottom(16f).left().padLeft(24f).row();
+
+        Label desc = new Label("黄队的火种已坠落于双环之下。\n幽灵在夜里游荡，白影在深处低语。\n真相，埋在这颗星球的核心之下。");
+        desc.setFontScale(0.8f);
+        desc.setColor(Color.valueOf("b8c0d0"));
+        desc.setAlignment(Align.left);
+        right.add(desc).left().padLeft(24f).padRight(24f).padBottom(22f).row();
 
         Table btnRow = new Table();
-        btnRow.setBackground(Styles.black6);
-        btnRow.button("开始探索", dialog::hide).size(230f, 46f).pad(10f).padRight(4f);
-        btnRow.button("背景故事", this::showStoryDialog).size(230f, 46f).pad(10f).padLeft(4f);
-        root.add(btnRow).width(500f).padBottom(8f).row();
+        btnRow.button("开始探索", dialog::hide).size(180f, 44f).padRight(8f);
+        btnRow.button("背景故事", this::showStoryDialog).size(140f, 44f);
+        right.add(btnRow).left().padLeft(24f).padBottom(10f).row();
 
-        Table qqRow = new Table();
-        qqRow.setBackground(Styles.black6);
-        qqRow.button("加入 QQ 群 / 反馈", () -> {
+        right.button("加入 QQ 群 / 反馈", () -> {
             try {
                 Core.app.openURI(QQ_URL);
             } catch (Exception ex) {
                 Log.err("Failed to open URL: " + QQ_URL);
             }
-        }).size(480f, 40f).pad(10f);
-        root.add(qqRow).width(500f).padBottom(8f).row();
+        }).size(328f, 38f).left().padLeft(24f).padBottom(24f).row();
 
+        body.add(left).width(340f).top();
+        body.add(right).width(420f).top();
+
+        window.add(body).width(760f).padTop(2f).colspan(2).row();
+
+        // ========== 底部状态栏 ==========
         Table statusBar = new Table();
         statusBar.setBackground(Styles.black6);
 
         Label statusDot = new Label("●");
         statusDot.setColor(Color.valueOf("66cc88"));
-        statusDot.setFontScale(0.7f);
+        statusDot.setFontScale(0.65f);
         statusBar.add(statusDot).padLeft(12f).padRight(6f);
 
-        Label statusText = new Label("READY");
+        Label statusText = new Label("READY  ·  ALL SYSTEMS NOMINAL");
         statusText.setColor(Color.valueOf("88a8b8"));
-        statusText.setFontScale(0.7f);
+        statusText.setFontScale(0.65f);
         statusBar.add(statusText).left();
 
         statusBar.add().expandX();
 
-        Label verLabel = new Label("v" + getModVersion() + "  ·  Fusion Team");
-        verLabel.setFontScale(0.68f);
-        verLabel.setColor(Color.valueOf("5a6a8a"));
-        statusBar.add(verLabel).padRight(10f);
-
         Label clock = new Label("--:--:--");
-        clock.setFontScale(0.68f);
+        clock.setFontScale(0.65f);
         clock.setColor(Color.valueOf("88a8b8"));
         statusBar.add(clock).padRight(12f);
 
-        root.add(statusBar).width(500f).padBottom(10f).row();
+        window.add(statusBar).width(760f).padTop(2f).colspan(2).row();
 
-        dialog.cont.add(root).width(520f).pad(0f);
+        dialog.cont.add(window).width(760f).pad(0f);
 
         dialog.cont.update(() -> {
             animTime += Time.delta;

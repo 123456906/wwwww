@@ -82,9 +82,9 @@ public class fPlanets {
             generator = new SuperPlanetGenerator();
             meshLoader = () -> new HexMesh(this, 6);
             localizedName = "宇宙无敌超级大霹力星";
-            visible = false;
+            visible = true;
             accessible = true;
-            alwaysUnlocked = false;
+            alwaysUnlocked = true;
             bloom = false;
             defaultEnv = Env.terrestrial;
             atmosphereColor = Color.valueOf("6688cc");

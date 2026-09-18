@@ -4,9 +4,11 @@ import arc.graphics.Color;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
+import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
 import arc.math.geom.Vec3;
 import arc.struct.ObjectMap;
+import arc.struct.Queue;
 import arc.struct.Seq;
 import arc.util.noise.Ridged;
 import arc.util.noise.Simplex;
@@ -277,6 +279,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         int cx = w / 2, cy = h / 2;
         float difficulty = sector != null ? sector.threat : 0.5f;
 
+        // 阶段 1：清空中心
         for (int dx = -15; dx <= 15; dx++) {
             for (int dy = -15; dy <= 15; dy++) {
                 if (dx * dx + dy * dy > 15 * 15) continue;
@@ -289,6 +292,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
+        // 阶段 2：内部随机地板替换
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 if (x < 5 || x >= w - 5 || y < 5 || y >= h - 5) continue;
@@ -305,20 +309,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        for (int x = 0; x < w; x++) {
-            for (int y = 0; y < h; y++) {
-                if (x >= 5 && x < w - 5 && y >= 5 && y < h - 5) continue;
-                Tile tile = tiles.getn(x, y);
-                if (tile == null) continue;
-                if (tile.floor() == null || tile.floor().isLiquid) continue;
-                if (tile.overlay() != Blocks.air) continue;
-                float r = rand.nextFloat();
-                if (r < 0.33f) tile.setOverlay(Blocks.oreBeryllium);
-                else if (r < 0.66f) tile.setOverlay(Blocks.oreLead);
-                else tile.setOverlay(Blocks.oreCopper);
-            }
-        }
-
+        // 阶段 3：矿物生成（双条件噪声）
         float poles = 0;
         if (sector != null) {
             poles = Math.abs(sector.tile.v.y);
@@ -328,15 +319,15 @@ public class FusionPlanetGenerator extends PlanetGenerator {
         float addscl = 1.3f;
 
         Seq<Block> ores = Seq.with(Blocks.oreCopper, Blocks.oreLead);
-        if (Simplex.noise3d(baseSeed, 2, 0.5f, scl,
+        if (sector != null && Simplex.noise3d(baseSeed, 2, 0.5f, scl,
                 sector.tile.v.x, sector.tile.v.y, sector.tile.v.z) * nmag + poles > 0.45f * addscl) {
             ores.add(Blocks.oreCoal);
         }
-        if (Simplex.noise3d(baseSeed, 2, 0.5f, scl,
+        if (sector != null && Simplex.noise3d(baseSeed, 2, 0.5f, scl,
                 sector.tile.v.x + 1f, sector.tile.v.y, sector.tile.v.z) * nmag + poles > 0.5f * addscl) {
             ores.add(Blocks.oreTitanium);
         }
-        if (Simplex.noise3d(baseSeed, 2, 0.5f, scl,
+        if (sector != null && Simplex.noise3d(baseSeed, 2, 0.5f, scl,
                 sector.tile.v.x + 2f, sector.tile.v.y, sector.tile.v.z) * nmag + poles > 0.88f * addscl) {
             ores.add(Blocks.oreThorium);
         }
@@ -375,6 +366,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
+        // 阶段 4：金属地板生成
         int metalSeed = this.seed + 3;
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
@@ -384,6 +376,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
                 if (tile.floor() == null || !tile.floor().hasSurface()) continue;
                 if (tile.overlay() != Blocks.air) continue;
                 if (Mathf.within(x, y, cx, cy, 20)) continue;
+                if (sector == null) continue;
 
                 Vec3 pos = sector.rect.project((float)x / w, (float)y / h);
                 float vx = pos.x, vy = pos.y, vz = pos.z;
@@ -422,6 +415,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
+        // 阶段 5：黑暗度包裹墙壁
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 Tile tile = tiles.getn(x, y);
@@ -449,6 +443,89 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
+        // 阶段 6：BFS 连通性修复（打通所有孤立空腔）
+        boolean[][] reachable = new boolean[w][h];
+        Queue<Point2> mainQ = new Queue<>();
+        mainQ.addLast(new Point2(cx, cy));
+        reachable[cx][cy] = true;
+
+        while (mainQ.size > 0) {
+            Point2 p = mainQ.removeFirst();
+            for (Point2 d : Geometry.d4) {
+                int nx = p.x + d.x, ny = p.y + d.y;
+                if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+                if (reachable[nx][ny]) continue;
+                Tile t = tiles.getn(nx, ny);
+                if (t == null || t.block() != Blocks.air) continue;
+                if (t.floor() == null || t.floor().isLiquid) continue;
+                reachable[nx][ny] = true;
+                mainQ.addLast(new Point2(nx, ny));
+            }
+        }
+
+        // 多源 BFS：从主区域出发，向墙壁方向扩张，记录父节点
+        int[][] dist = new int[w][h];
+        int[][] parentX = new int[w][h];
+        int[][] parentY = new int[w][h];
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                dist[x][y] = Integer.MAX_VALUE;
+                parentX[x][y] = -1;
+                parentY[x][y] = -1;
+            }
+        }
+        Queue<Point2> bfsQ = new Queue<>();
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                if (reachable[x][y]) {
+                    dist[x][y] = 0;
+                    bfsQ.addLast(new Point2(x, y));
+                }
+            }
+        }
+
+        while (bfsQ.size > 0) {
+            Point2 p = bfsQ.removeFirst();
+            for (Point2 d : Geometry.d4) {
+                int nx = p.x + d.x, ny = p.y + d.y;
+                if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+                if (dist[nx][ny] != Integer.MAX_VALUE) continue;
+                dist[nx][ny] = dist[p.x][p.y] + 1;
+                parentX[nx][ny] = p.x;
+                parentY[nx][ny] = p.y;
+                bfsQ.addLast(new Point2(nx, ny));
+            }
+        }
+
+        // 对所有孤立空腔回溯路径，挖开墙壁
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                if (reachable[x][y]) continue;
+                Tile t = tiles.getn(x, y);
+                if (t == null || t.block() != Blocks.air) continue;
+                if (t.floor() == null || t.floor().isLiquid) continue;
+
+                int px = x, py = y;
+                while (dist[px][py] > 0) {
+                    Tile pt = tiles.getn(px, py);
+                    if (pt != null) {
+                        if (pt.floor() != null && pt.floor().isLiquid) {
+                            pt.setFloor(Blocks.sand.asFloor());
+                            pt.setBlock(Blocks.air);
+                        } else {
+                            pt.setBlock(Blocks.air);
+                        }
+                    }
+                    int nx2 = parentX[px][py];
+                    int ny2 = parentY[px][py];
+                    if (nx2 < 0 || ny2 < 0) break;
+                    px = nx2;
+                    py = ny2;
+                }
+            }
+        }
+
+        // 阶段 7：装饰生成
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 Tile tile = tiles.getn(x, y);
@@ -486,6 +563,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             }
         }
 
+        // 阶段 8：敌人生成点
         int spawnX = cx, spawnY = cy;
         Seq<Vec2> enemySpawns = new Seq<>();
         int offset = rand.nextInt(360);
@@ -556,6 +634,7 @@ public class FusionPlanetGenerator extends PlanetGenerator {
             state.rules.waves = true;
         }
 
+        // 阶段 9：核心搜索与放置
         int coreX = spawnX, coreY = spawnY;
         boolean found = false;
         int searchRadius = 30;
