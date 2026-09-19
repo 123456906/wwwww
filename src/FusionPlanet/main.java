@@ -59,7 +59,6 @@ public class main extends Mod {
         Table window = new Table();
         window.setBackground(Styles.black8);
 
-        // ========== 顶部标题栏 ==========
         Table titleBar = new Table();
         titleBar.setBackground(Styles.black6);
 
@@ -92,10 +91,8 @@ public class main extends Mod {
 
         window.add(titleBar).width(760f).height(36f).colspan(2).row();
 
-        // ========== 主体：左右两栏 ==========
         Table body = new Table();
 
-        // ---------- 左栏：Logo + 品牌 ----------
         Table left = new Table();
         left.setBackground(Styles.black6);
 
@@ -142,7 +139,6 @@ public class main extends Mod {
         verLabel.setColor(Color.valueOf("5a6a8a"));
         left.add(verLabel).padBottom(24f).row();
 
-        // ---------- 右栏：内容 + 按钮 ----------
         Table right = new Table();
         right.setBackground(Styles.black6);
 
@@ -183,7 +179,6 @@ public class main extends Mod {
 
         window.add(body).width(760f).padTop(2f).colspan(2).row();
 
-        // ========== 底部状态栏 ==========
         Table statusBar = new Table();
         statusBar.setBackground(Styles.black6);
 
@@ -247,6 +242,20 @@ public class main extends Mod {
                 "赛普罗并非无主之地。在红与黄的旗帜升起之前，这颗星球属于先驱者——" +
                         "一个早已被遗忘的名字。他们建立了第一批核心，点亮了第一座发射井。" +
                         "后来他们分裂了。");
+
+        TextureRegion chapter1 = Core.atlas.find("1");
+        if (chapter1.found()) {
+            float aspect = chapter1.height / (float) chapter1.width;
+            float imgW = 490f;
+            float imgH = imgW * aspect;
+            content.add(new Image(chapter1))
+                    .size(imgW, imgH)
+                    .padTop(6f)
+                    .padBottom(14f)
+                    .row();
+        } else {
+            Log.err("[story] image '1' not found in atlas");
+        }
 
         addChapter(content, "第二章 · 红与黄",
                 "先驱者的血脉一分为二。红队执掌铁与火，黄队笃信光与秩序。" +

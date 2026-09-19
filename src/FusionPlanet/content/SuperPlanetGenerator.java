@@ -25,24 +25,6 @@ import static mindustry.Vars.*;
 
 public class SuperPlanetGenerator extends PlanetGenerator {
 
-    private static final Block[][] terrainTable = {
-            {Blocks.deepwater, Blocks.water, Blocks.sand, Blocks.grass, Blocks.moss, Blocks.sporeMoss, Blocks.stone},
-            {Blocks.water, Blocks.sand, Blocks.sand, Blocks.grass, Blocks.moss, Blocks.sporeMoss, Blocks.stone},
-            {Blocks.sand, Blocks.sand, Blocks.grass, Blocks.grass, Blocks.moss, Blocks.sporeMoss, Blocks.basalt},
-            {Blocks.sand, Blocks.grass, Blocks.grass, Blocks.moss, Blocks.sporeMoss, Blocks.sporeMoss, Blocks.basalt},
-            {Blocks.sand, Blocks.grass, Blocks.grass, Blocks.moss, Blocks.sporeMoss, Blocks.stone, Blocks.basalt},
-            {Blocks.grass, Blocks.grass, Blocks.moss, Blocks.sporeMoss, Blocks.stone, Blocks.basalt, Blocks.rhyolite},
-            {Blocks.grass, Blocks.moss, Blocks.moss, Blocks.stone, Blocks.basalt, Blocks.rhyolite, Blocks.dacite},
-            {Blocks.grass, Blocks.grass, Blocks.moss, Blocks.stone, Blocks.basalt, Blocks.rhyolite, Blocks.dacite},
-            {Blocks.grass, Blocks.moss, Blocks.stone, Blocks.basalt, Blocks.rhyolite, Blocks.dacite, Blocks.shale},
-            {Blocks.moss, Blocks.stone, Blocks.basalt, Blocks.rhyolite, Blocks.dacite, Blocks.shale, Blocks.moss},
-            {Blocks.moss, Blocks.stone, Blocks.basalt, Blocks.rhyolite, Blocks.shale, Blocks.grass, Blocks.ice},
-            {Blocks.stone, Blocks.basalt, Blocks.rhyolite, Blocks.shale, Blocks.ice, Blocks.ice, Blocks.snow},
-            {Blocks.basalt, Blocks.rhyolite, Blocks.shale, Blocks.ice, Blocks.ice, Blocks.snow, Blocks.snow},
-            {Blocks.ice, Blocks.ice, Blocks.snow, Blocks.snow, Blocks.ice, Blocks.ice, Blocks.snow},
-            {Blocks.ice, Blocks.ice, Blocks.snow, Blocks.ice, Blocks.stone, Blocks.snow, Blocks.ice}
-    };
-
     public float heightScale = 4.5f;
     public float heightPow = 1.8f;
     public float waterOffset = 0.02f;
@@ -114,68 +96,143 @@ public class SuperPlanetGenerator extends PlanetGenerator {
         tmpHumidity = Mathf.clamp(humidity, 0f, 1f);
     }
 
-    public Block getBlock(Vec3 position, boolean visualOnly) {
+    private String getBiome(Vec3 position) {
+        computeClimate(position);
+        float lat = Math.abs(position.y);
         float height = rawHeight(position);
+        float humidity = tmpHumidity;
 
         if (height < waterLevel) {
-            if (height < waterLevel * 0.4f) return Blocks.deepwater;
-            return Blocks.water;
+            if (height < waterLevel * 0.4f) return "deepwater";
+            return "water";
         }
 
-        if (height < waterLevel + 0.04f) return Blocks.sand;
-
-        computeClimate(position);
-        float humidity = tmpHumidity;
-        float lat = Math.abs(position.y);
+        if (height < waterLevel + 0.04f) return "beach";
 
         if (lat > 0.8f) {
-            if (height > 0.6f) return height > 0.7f ? Blocks.basalt : Blocks.stone;
-            if (height > 0.3f) return Blocks.stone;
-            return Blocks.ice;
+            if (height > 0.6f) return "arctic_mountain";
+            if (height > 0.3f) return "tundra";
+            return "polar";
         }
 
         if (lat > 0.65f) {
-            if (height > 0.6f) return height > 0.7f ? Blocks.basalt : Blocks.stone;
-            if (height > 0.35f) return Blocks.moss;
-            return Blocks.grass;
+            if (height > 0.6f) return "taiga_mountain";
+            if (height > 0.35f) return "taiga";
+            return "boreal_forest";
         }
 
         if (lat > 0.35f) {
-            if (height > 0.6f) {
-                if (height > 0.7f) return Blocks.dacite;
-                if (height > 0.5f) return Blocks.stone;
-                return Blocks.moss;
-            }
+            if (height > 0.6f) return "temperate_mountain";
             if (humidity > 0.6f) {
-                return height > 0.3f ? Blocks.moss : Blocks.grass;
+                if (height > 0.3f) return "temperate_forest";
+                return "temperate_grassland";
             }
-            if (humidity > 0.3f) return Blocks.grass;
-            return height > 0.4f ? Blocks.grass : Blocks.sand;
+            if (humidity > 0.3f) return "temperate_grassland";
+            return "temperate_steppe";
         }
 
         if (lat > 0.15f) {
-            if (height > 0.6f) {
-                if (height > 0.7f) return Blocks.rhyolite;
-                if (height > 0.5f) return Blocks.stone;
-                return Blocks.moss;
-            }
+            if (height > 0.6f) return "subtropical_mountain";
             if (humidity > 0.7f) {
-                return Blocks.moss;
+                if (height > 0.35f) return "subtropical_forest";
+                return "subtropical_wetland";
             }
-            if (humidity > 0.4f) return Blocks.grass;
-            return height > 0.4f ? Blocks.grass : Blocks.sand;
+            if (humidity > 0.4f) return "subtropical_grassland";
+            return "subtropical_savanna";
         }
 
-        if (height > 0.6f) {
-            if (height > 0.7f) return Blocks.basalt;
-            if (height > 0.5f) return Blocks.stone;
-            return Blocks.moss;
-        }
+        if (height > 0.6f) return "tropical_mountain";
         if (humidity > 0.7f) {
-            return height > 0.35f ? Blocks.sporeMoss : Blocks.moss;
+            if (height > 0.35f) return "tropical_rainforest";
+            return "tropical_wetland";
         }
-        if (humidity > 0.4f) return height > 0.3f ? Blocks.moss : Blocks.grass;
-        return height > 0.4f ? Blocks.grass : Blocks.sand;
+        if (humidity > 0.4f) return "tropical_forest";
+        return "tropical_savanna";
+    }
+
+    public Block getBlock(Vec3 position, boolean visualOnly) {
+        float height = rawHeight(position);
+        String biome = getBiome(position);
+
+        switch (biome) {
+            case "deepwater": return Blocks.deepwater;
+            case "water": return Blocks.water;
+            case "beach": return Blocks.sand;
+            case "tropical_rainforest": return height > 0.3f ? Blocks.sporeMoss : Blocks.moss;
+            case "tropical_forest": return height > 0.3f ? Blocks.moss : Blocks.grass;
+            case "tropical_wetland": return height > 0.2f ? Blocks.moss : Blocks.grass;
+            case "tropical_savanna": return height > 0.4f ? Blocks.grass : Blocks.sand;
+            case "tropical_mountain": return height > 0.7f ? Blocks.basalt : (height > 0.5f ? Blocks.stone : Blocks.moss);
+            case "subtropical_forest": return height > 0.3f ? Blocks.moss : Blocks.grass;
+            case "subtropical_wetland": return height > 0.2f ? Blocks.moss : Blocks.grass;
+            case "subtropical_grassland": return Blocks.grass;
+            case "subtropical_savanna": return height > 0.4f ? Blocks.grass : Blocks.sand;
+            case "subtropical_mountain": return height > 0.7f ? Blocks.rhyolite : (height > 0.5f ? Blocks.stone : Blocks.moss);
+            case "temperate_forest": return height > 0.3f ? Blocks.moss : Blocks.grass;
+            case "temperate_grassland": return Blocks.grass;
+            case "temperate_steppe": return height > 0.4f ? Blocks.grass : Blocks.sand;
+            case "temperate_mountain": return height > 0.7f ? Blocks.dacite : (height > 0.5f ? Blocks.stone : Blocks.moss);
+            case "taiga": return height > 0.3f ? Blocks.stone : Blocks.moss;
+            case "boreal_forest": return height > 0.3f ? Blocks.moss : Blocks.grass;
+            case "taiga_mountain": return height > 0.6f ? Blocks.basalt : Blocks.stone;
+            case "tundra": return height > 0.3f ? Blocks.stone : Blocks.snow;
+            case "polar": return height > 0.3f ? Blocks.ice : Blocks.snow;
+            case "arctic_mountain": return height > 0.5f ? Blocks.stone : Blocks.ice;
+            default: return Blocks.grass;
+        }
+    }
+
+    private Block getVegetation(Vec3 position, Floor floor) {
+        String biome = getBiome(position);
+        float height = rawHeight(position);
+        float lat = Math.abs(position.y);
+
+        if (floor == Blocks.water || floor == Blocks.deepwater || floor == Blocks.sand) return null;
+
+        float density;
+        switch (biome) {
+            case "tropical_rainforest": density = 0.12f; break;
+            case "tropical_forest": density = 0.08f; break;
+            case "tropical_wetland": density = 0.06f; break;
+            case "tropical_savanna": density = 0.02f; break;
+            case "tropical_mountain": density = 0.03f; break;
+            case "subtropical_forest": density = 0.07f; break;
+            case "subtropical_wetland": density = 0.05f; break;
+            case "subtropical_grassland": density = 0.03f; break;
+            case "subtropical_savanna": density = 0.02f; break;
+            case "temperate_forest": density = 0.06f; break;
+            case "temperate_grassland": density = 0.03f; break;
+            case "temperate_steppe": density = 0.015f; break;
+            case "taiga": density = 0.025f; break;
+            case "boreal_forest": density = 0.04f; break;
+            case "tundra": density = 0.01f; break;
+            default: density = 0.02f;
+        }
+
+        if (height > 0.5f) density *= 0.3f;
+        if (height < 0.15f) density *= 0.5f;
+
+        if (rand.nextFloat() > density) return null;
+
+        float vegType = rand.nextFloat();
+
+        if (lat < 0.35f) {
+            if (vegType < 0.3f) return Blocks.pine;
+            if (vegType < 0.5f) return Blocks.shrubs;
+            return Blocks.sporeCluster;
+        }
+
+        if (lat < 0.65f) {
+            if (vegType < 0.4f) return rand.nextFloat() < 0.6f ? Blocks.pine : Blocks.whiteTree;
+            if (vegType < 0.6f) return Blocks.shrubs;
+            if (vegType < 0.8f) return Blocks.moss;
+            return Blocks.sporeCluster;
+        }
+
+        if (vegType < 0.3f) return Blocks.whiteTree;
+        if (vegType < 0.5f) return Blocks.pine;
+        if (vegType < 0.7f) return Blocks.shrubs;
+        return Blocks.stone;
     }
 
     @Override
@@ -213,11 +270,12 @@ public class SuperPlanetGenerator extends PlanetGenerator {
             return;
         }
         if (block == Blocks.sporeMoss) {
-            float g = 120f + humidity * 40f;
-            float r = 80f + humidity * 20f;
+            float r = 140f + humidity * 30f;
+            float g = 80f + humidity * 20f;
+            float b = 180f + humidity * 40f;
             out.r = Mathf.clamp(r / 255f, 0f, 1f);
             out.g = Mathf.clamp(g / 255f, 0f, 1f);
-            out.b = 60f / 255f;
+            out.b = Mathf.clamp(b / 255f, 0f, 1f);
             out.a = 1f;
             return;
         }
@@ -328,7 +386,7 @@ public class SuperPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // 阶段 2：黑暗度包裹法，把墙边缘的空白格自动转为墙
+        // 阶段 2：黑暗度包裹法
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 Tile tile = tiles.getn(x, y);
@@ -354,7 +412,7 @@ public class SuperPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // 阶段 3：出生点清理，为 BFS 提供起点
+        // 阶段 3：出生点清理
         int startClear = 5;
         for (int dx = -startClear; dx <= startClear; dx++) {
             for (int dy = -startClear; dy <= startClear; dy++) {
@@ -367,7 +425,7 @@ public class SuperPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // 阶段 4：BFS 连通性修复
+        // 阶段 4：BFS 主区域标记
         boolean[][] reachable = new boolean[w][h];
         Queue<Point2> queue = new Queue<>();
         queue.addLast(new Point2(cx, cy));
@@ -404,7 +462,7 @@ public class SuperPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // 阶段 6：出生点二次清理，确保地板非液体
+        // 阶段 6：出生点二次清理
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = -4; dy <= 4; dy++) {
                 int tx = cx + dx, ty = cy + dy;
@@ -474,7 +532,26 @@ public class SuperPlanetGenerator extends PlanetGenerator {
             }
         }
 
-        // 阶段 8：出生点放置与规则
+        // 阶段 8：植被生成
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                Tile tile = tiles.getn(x, y);
+                if (tile == null) continue;
+                if (tile.block() != Blocks.air) continue;
+                Floor floor = tile.floor();
+                if (floor == null || floor.isLiquid) continue;
+                if (tile.overlay() != Blocks.air) continue;
+                if (Math.abs(x - cx) <= 6 && Math.abs(y - cy) <= 6) continue;
+
+                Vec3 pos = sector.rect.project((float) x / w, (float) y / h);
+                Block veg = getVegetation(pos, floor);
+                if (veg != null && veg != Blocks.air) {
+                    tile.setBlock(veg);
+                }
+            }
+        }
+
+        // 阶段 9：出生点放置与规则
         Schematics.placeLaunchLoadout(cx, cy);
 
         state.rules.waves = true;
@@ -494,6 +571,6 @@ public class SuperPlanetGenerator extends PlanetGenerator {
 
     @Override
     public float getSizeScl() {
-        return 2800f;
+        return 2000f;
     }
 }
