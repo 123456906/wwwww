@@ -14,7 +14,7 @@ main: "FusionPlanet.main"
 description: "A Mindustry Java mod."
 
 #the mod version
-version: 1.4.7
+version: 1.4.8
 
 #the minimum game build required to run this mod
 minGameVersion: 158

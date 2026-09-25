@@ -49,47 +49,47 @@ public class main extends Mod {
         });
     }
 
-    private void createLinearFilterToggle(){
-        linearFilterToggle = new Table();
-        linearFilterToggle.name = "linearFilterToggle";
+private void createLinearFilterToggle(){
+    linearFilterToggle = new Table();
+    linearFilterToggle.name = "linearFilterToggle";
 
-        boolean current = Core.settings.getBool("linear", false);
-        linearToggleBtn = new TextButton("", Styles.flatt);
-        linearToggleBtn.clicked(() -> {
-            boolean next = !Core.settings.getBool("linear", false);
-            Core.settings.put("linear", next);
-            applyLinearFilter(next);
-            updateToggleText(next);
-            Log.info("Anti-aliasing (linear filter) toggled: " + next);
-        });
-        updateToggleText(current);
+    boolean current = Core.settings.getBool("linear", false);
+    linearToggleBtn = new TextButton("", Styles.flatt);
+    linearToggleBtn.clicked(() -> {
+        boolean next = !Core.settings.getBool("linear", false);
+        Core.settings.put("linear", next);
+        applyLinearFilter(next);
+        updateToggleText(next);
+        Log.info("Anti-aliasing (linear filter) toggled: " + next);
+    });
+    updateToggleText(current);
 
-        linearFilterToggle.add(linearToggleBtn).size(TOGGLE_W, TOGGLE_H);
-        linearFilterToggle.setSize(TOGGLE_W, TOGGLE_H);
-        linearFilterToggle.visible = false;
+    linearFilterToggle.add(linearToggleBtn).size(TOGGLE_W, TOGGLE_H);
+    linearFilterToggle.setSize(TOGGLE_W, TOGGLE_H);
+    linearFilterToggle.visible = false;
 
-        Events.run(Trigger.update, () -> {
-            if (linearFilterToggle == null) return;
+    applyLinearFilter(current);
 
-            boolean inMenu = Vars.state.isMenu();
-            linearFilterToggle.visible = inMenu;
+    Events.run(Trigger.update, () -> {
+        if (linearFilterToggle == null) return;
+        if (Core.scene == null || Core.scene.root == null) return;
 
-            if (inMenu) {
-                if (linearFilterToggle.parent == null && Vars.ui.menuGroup != null) {
-                    Vars.ui.menuGroup.addChild(linearFilterToggle);
-                }
-                if (linearFilterToggle.parent != null) {
-                    linearFilterToggle.toFront();
-                    float pad = 24f;
-                    float x = Core.scene.getWidth() - TOGGLE_W - pad;
-                    float y = pad;
-                    linearFilterToggle.setPosition(x, y);
-                }
-            }
-        });
+        boolean inMenu = Vars.state.isMenu();
+        linearFilterToggle.visible = inMenu;
 
-        applyLinearFilter(current);
-    }
+        if (linearFilterToggle.parent == null) {
+            Core.scene.root.addChild(linearFilterToggle);
+        }
+
+        if (inMenu && linearFilterToggle.parent != null) {
+            linearFilterToggle.toFront();
+            float pad = 24f;
+            float x = Core.scene.getWidth() - TOGGLE_W - pad;
+            float y = pad;
+            linearFilterToggle.setPosition(x, y);
+        }
+    });
+}
 
     private void updateToggleText(boolean on){
         if (linearToggleBtn != null) {
