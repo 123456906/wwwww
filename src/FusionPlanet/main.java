@@ -7,11 +7,14 @@ import FusionPlanet.content.fPlanets;
 import FusionPlanet.content.PrecursorTeam;
 import arc.*;
 import arc.graphics.Color;
+import arc.graphics.Texture;
+import arc.graphics.Texture.TextureFilter;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.Image;
 import arc.scene.ui.Label;
 import arc.scene.ui.ScrollPane;
+import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectSet;
 import arc.util.*;
@@ -32,12 +35,78 @@ public class main extends Mod {
 
     private static final String QQ_URL = "https://qm.qq.com/q/D9Z6lG8Urm";
 
+    private Table linearFilterToggle;
+    private TextButton linearToggleBtn;
+    private static final float TOGGLE_W = 220f;
+    private static final float TOGGLE_H = 48f;
+
     public main(){
         Log.info("Loaded Fusion Planet mod constructor.");
 
         Events.on(ClientLoadEvent.class, e -> {
+            createLinearFilterToggle();
             Time.runTask(10f, this::showWelcomeDialog);
         });
+    }
+
+    private void createLinearFilterToggle(){
+        linearFilterToggle = new Table();
+        linearFilterToggle.name = "linearFilterToggle";
+
+        boolean current = Core.settings.getBool("linear", false);
+        linearToggleBtn = new TextButton("", Styles.flatt);
+        linearToggleBtn.clicked(() -> {
+            boolean next = !Core.settings.getBool("linear", false);
+            Core.settings.put("linear", next);
+            applyLinearFilter(next);
+            updateToggleText(next);
+            Log.info("Anti-aliasing (linear filter) toggled: " + next);
+        });
+        updateToggleText(current);
+
+        linearFilterToggle.add(linearToggleBtn).size(TOGGLE_W, TOGGLE_H);
+        linearFilterToggle.setSize(TOGGLE_W, TOGGLE_H);
+        linearFilterToggle.visible = false;
+
+        Events.run(Trigger.update, () -> {
+            if (linearFilterToggle == null) return;
+
+            boolean inMenu = Vars.state.isMenu();
+            linearFilterToggle.visible = inMenu;
+
+            if (inMenu) {
+                if (linearFilterToggle.parent == null && Vars.ui.menuGroup != null) {
+                    Vars.ui.menuGroup.addChild(linearFilterToggle);
+                }
+                if (linearFilterToggle.parent != null) {
+                    linearFilterToggle.toFront();
+                    float pad = 24f;
+                    float x = Core.scene.getWidth() - TOGGLE_W - pad;
+                    float y = pad;
+                    linearFilterToggle.setPosition(x, y);
+                }
+            }
+        });
+
+        applyLinearFilter(current);
+    }
+
+    private void updateToggleText(boolean on){
+        if (linearToggleBtn != null) {
+            linearToggleBtn.setText("抗锯齿: " + (on ? "开" : "关"));
+        }
+    }
+
+    private void applyLinearFilter(boolean linear){
+        TextureFilter filter = linear ? TextureFilter.linear : TextureFilter.nearest;
+        try {
+            for (Texture tex : Core.atlas.getTextures()) {
+                tex.setFilter(filter);
+            }
+            Log.info("Applied " + filter + " to all textures.");
+        } catch (Exception ex) {
+            Log.err("Failed to apply filter: " + ex);
+        }
     }
 
     private String getModVersion(){
@@ -240,8 +309,8 @@ public class main extends Mod {
 
         addChapter(content, "第一章 · 先驱者",
                 "赛普罗并非无主之地。在红与黄的旗帜升起之前，这颗星球属于先驱者——" +
-                        "一个早已被遗忘的名字。他们建立了第一批核心，点亮了第一座发射井。" +
-                        "后来他们分裂了。");
+                "一个早已被遗忘的名字。他们建立了第一批核心，点亮了第一座发射井。" +
+                "后来他们分裂了。");
 
         TextureRegion chapter1 = Core.atlas.find("1");
         if (chapter1.found()) {
@@ -259,32 +328,32 @@ public class main extends Mod {
 
         addChapter(content, "第二章 · 红与黄",
                 "先驱者的血脉一分为二。红队执掌铁与火，黄队笃信光与秩序。" +
-                        "分歧演变为战争，战争又演变为流亡。当 CRUX 的红色洪流吞没最后一座黄队核心时，" +
-                        "残余的运输舰跃入深空——身后再无归途。");
+                "分歧演变为战争，战争又演变为流亡。当 CRUX 的红色洪流吞没最后一座黄队核心时，" +
+                "残余的运输舰跃入深空——身后再无归途。");
 
         addChapter(content, "第三章 · 融合星球",
                 "跃迁引擎在未知星域崩解。黄队坠落到一颗被双环包裹的行星——" +
-                        "大气中弥漫着赛普罗与埃里克尔都未曾记录的元素。土壤会融合、会生长、会记忆。" +
-                        "他们把这颗星球命名为「融合世界」。");
+                "大气中弥漫着赛普罗与埃里克尔都未曾记录的元素。土壤会融合、会生长、会记忆。" +
+                "他们把这颗星球命名为「融合世界」。");
 
         addChapter(content, "第四章 · 幽灵部队",
                 "第一次遭遇发生在第八个夜晚。哨塔报告「红色单位接近」，但雷达上没有任何信号。" +
-                        "火力覆盖后，只剩下腐蚀的地面和一串不属于任何已知队伍的编码。\n" +
-                        "他们称其为「幽灵」——CRUX 的幽灵。\n" +
-                        "诡异的是，CRUX 官方通讯中从未提及这颗星球，也从未承认派出过任何部队。" +
-                        "幽灵从何而来？连 CRUX 自己都不知道。");
+                "火力覆盖后，只剩下腐蚀的地面和一串不属于任何已知队伍的编码。\n" +
+                "他们称其为「幽灵」——CRUX 的幽灵。\n" +
+                "诡异的是，CRUX 官方通讯中从未提及这颗星球，也从未承认派出过任何部队。" +
+                "幽灵从何而来？连 CRUX 自己都不知道。");
 
         addChapter(content, "第五章 · 白影重临",
                 "更深的矿井里，黄队发现了不属于 CRUX、也不属于当代赛普罗的遗迹——" +
-                        "纯白色的装甲、早已断电的核心、以及墙壁上刻着的陌生文字。\n" +
-                        "先驱者。这颗星球最早的居民。\n" +
-                        "他们曾经在这里建立文明，如今只剩下空荡的方尖碑与沉默的数据核心。" +
-                        "他们是谁？他们为什么消失？他们和幽灵之间，又有什么联系？");
+                "纯白色的装甲、早已断电的核心、以及墙壁上刻着的陌生文字。\n" +
+                "先驱者。这颗星球最早的居民。\n" +
+                "他们曾经在这里建立文明，如今只剩下空荡的方尖碑与沉默的数据核心。" +
+                "他们是谁？他们为什么消失？他们和幽灵之间，又有什么联系？");
 
         addChapter(content, "终章 · 融合边界",
                 "黄队在这里竖起新的核心。他们不再是逃亡者——他们是这颗行星的新居民。\n" +
-                        "但幽灵仍在夜里游荡，白影仍在深处低语。融合边界已经打开，" +
-                        "而真相，埋在这颗星球的核心之下。");
+                "但幽灵仍在夜里游荡，白影仍在深处低语。融合边界已经打开，" +
+                "而真相，埋在这颗星球的核心之下。");
 
         ScrollPane pane = new ScrollPane(content);
         pane.setScrollingDisabled(true, false);
