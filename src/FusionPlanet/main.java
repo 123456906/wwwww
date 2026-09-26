@@ -49,47 +49,47 @@ public class main extends Mod {
         });
     }
 
-private void createLinearFilterToggle(){
-    linearFilterToggle = new Table();
-    linearFilterToggle.name = "linearFilterToggle";
+    private void createLinearFilterToggle(){
+        linearFilterToggle = new Table();
+        linearFilterToggle.name = "linearFilterToggle";
 
-    boolean current = Core.settings.getBool("linear", false);
-    linearToggleBtn = new TextButton("", Styles.flatt);
-    linearToggleBtn.clicked(() -> {
-        boolean next = !Core.settings.getBool("linear", false);
-        Core.settings.put("linear", next);
-        applyLinearFilter(next);
-        updateToggleText(next);
-        Log.info("Anti-aliasing (linear filter) toggled: " + next);
-    });
-    updateToggleText(current);
+        boolean current = Core.settings.getBool("linear", false);
+        linearToggleBtn = new TextButton("", Styles.flatt);
+        linearToggleBtn.clicked(() -> {
+            boolean next = !Core.settings.getBool("linear", false);
+            Core.settings.put("linear", next);
+            applyLinearFilter(next);
+            updateToggleText(next);
+            Log.info("Anti-aliasing (linear filter) toggled: " + next);
+        });
+        updateToggleText(current);
 
-    linearFilterToggle.add(linearToggleBtn).size(TOGGLE_W, TOGGLE_H);
-    linearFilterToggle.setSize(TOGGLE_W, TOGGLE_H);
-    linearFilterToggle.visible = false;
+        linearFilterToggle.add(linearToggleBtn).size(TOGGLE_W, TOGGLE_H);
+        linearFilterToggle.setSize(TOGGLE_W, TOGGLE_H);
+        linearFilterToggle.visible = false;
 
-    applyLinearFilter(current);
+        applyLinearFilter(current);
 
-    Events.run(Trigger.update, () -> {
-        if (linearFilterToggle == null) return;
-        if (Core.scene == null || Core.scene.root == null) return;
+        Events.run(Trigger.update, () -> {
+            if (linearFilterToggle == null) return;
+            if (Core.scene == null || Core.scene.root == null) return;
 
-        boolean inMenu = Vars.state.isMenu();
-        linearFilterToggle.visible = inMenu;
+            boolean inMenu = Vars.state.isMenu();
+            linearFilterToggle.visible = inMenu;
 
-        if (linearFilterToggle.parent == null) {
-            Core.scene.root.addChild(linearFilterToggle);
-        }
+            if (linearFilterToggle.parent == null) {
+                Core.scene.root.addChild(linearFilterToggle);
+            }
 
-        if (inMenu && linearFilterToggle.parent != null) {
-            linearFilterToggle.toFront();
-            float pad = 24f;
-            float x = Core.scene.getWidth() - TOGGLE_W - pad;
-            float y = pad;
-            linearFilterToggle.setPosition(x, y);
-        }
-    });
-}
+            if (inMenu && linearFilterToggle.parent != null) {
+                linearFilterToggle.toFront();
+                float pad = 24f;
+                float x = Core.scene.getWidth() - TOGGLE_W - pad;
+                float y = pad;
+                linearFilterToggle.setPosition(x, y);
+            }
+        });
+    }
 
     private void updateToggleText(boolean on){
         if (linearToggleBtn != null) {
@@ -169,16 +169,35 @@ private void createLinearFilterToggle(){
         if (!logoRegion.found()) {
             logoRegion = Core.atlas.find("logo");
         }
+        TextureRegion sideRegion = Core.atlas.find("2");
+        if (!sideRegion.found()) {
+            sideRegion = Core.atlas.find("ui/2");
+        }
+
+        Table logoRow = new Table();
+
         if (logoRegion.found()) {
             float aspect = logoRegion.height / (float) logoRegion.width;
-            float w = 320f;
+            float w = 220f;
             float h = w * aspect;
-            left.add(new Image(logoRegion)).size(w, h).padTop(24f).padBottom(16f).row();
+            logoRow.add(new Image(logoRegion)).size(w, h).padRight(14f);
         } else {
-            left.add(new Label("FUSION")).fontScale(2.6f)
-                    .color(Color.valueOf("7a8cbf"))
-                    .padTop(40f).padBottom(8f).row();
+            Label fallback = new Label("FUSION");
+            fallback.setFontScale(2.0f);
+            fallback.setColor(Color.valueOf("7a8cbf"));
+            logoRow.add(fallback).padRight(14f);
         }
+
+        if (sideRegion.found()) {
+            float aspect = sideRegion.height / (float) sideRegion.width;
+            float w = 90f;
+            float h = w * aspect;
+            logoRow.add(new Image(sideRegion)).size(w, h);
+        } else {
+            Log.err("[welcome] image '2' not found in atlas");
+        }
+
+        left.add(logoRow).padTop(24f).padBottom(16f).row();
 
         Label title = new Label("FUSION PLANET");
         title.setFontScale(1.55f);

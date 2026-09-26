@@ -24,6 +24,7 @@ import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.storage.CoreBlock;
 import mindustry.world.draw.*;
 import mindustry.world.draw.DrawTurret;
+import mindustry.world.meta.BuildVisibility;
 
 import static FusionPlanet.content.Funits.falcon;
 
@@ -32,6 +33,7 @@ public class Fblocks {
     public static Block coreEvoke;
     public static Block assimilator;
     public static Block summonTurret;
+    public static Block fusionPlanetUnlock;
 
     public static Floor blueGrass;
     public static Floor purpleStone;
@@ -198,6 +200,19 @@ public class Fblocks {
             speedMultiplier = 0.7f;
             mapColor.set(Color.valueOf("334477"));
         }};
+        
+        fusionPlanetUnlock = new Block("fusion-planet-unlock") {{
+        localizedName = "Fusion World";
+        description = "解锁融合世界，开启新的征程。";
+        size = 2;
+        health = 100;
+        buildVisibility = BuildVisibility.hidden;
+        alwaysUnlocked = false;
+        requirements(Category.effect, ItemStack.with(
+            Items.copper, 1000,
+            Items.lead, 1000
+        ));
+      }};
     }
 
     public static class Assimilator extends Block {
