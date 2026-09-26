@@ -98,7 +98,6 @@ public class fPlanets {
                 r.waveTeam = Team.crux;
                 r.waves = true;
                 r.env = Env.terrestrial;
-                r.winWave = 10;
                 r.placeRangeCheck = true;
             };
         }};
