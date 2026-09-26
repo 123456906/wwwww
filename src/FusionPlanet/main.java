@@ -46,7 +46,6 @@ public class main extends Mod {
         Events.on(ClientLoadEvent.class, e -> {
             createLinearFilterToggle();
             setupFusionPlanetUnlockIcon();
-            setupFusionPlanetIcon();
             applyInitialLockState();
             Time.runTask(10f, this::showWelcomeDialog);
         });
@@ -63,29 +62,32 @@ public class main extends Mod {
         }
     }
 
-    private void setupFusionPlanetIcon(){
-        if (fPlanets.fusionPlanet == null) return;
-        TextureRegion icon = Core.atlas.find("3");
-        if (icon.found()) {
-            fPlanets.fusionPlanet.uiIcon = icon;
-            fPlanets.fusionPlanet.iconColor = Color.white;
-            Log.info("[FusionPlanet] fusionPlanet icon set to: 3");
-        } else {
-            Log.err("[FusionPlanet] icon '3' not found in atlas");
+    private boolean isContentUnlocked(UnlockableContent c){
+        if (c == null) return false;
+        if (c.alwaysUnlocked) return true;
+        try {
+            java.lang.reflect.Field f = UnlockableContent.class.getDeclaredField("unlocked");
+            f.setAccessible(true);
+            Object v = f.get(c);
+            return v instanceof Boolean && (Boolean) v;
+        } catch (Exception ex) {
+            Log.err("[FusionPlanet] reflection failed: " + ex);
+            return false;
         }
     }
 
     private void applyInitialLockState(){
         if (Fblocks.fusionPlanetUnlock == null || fPlanets.fusionPlanet == null) return;
 
-        if (Fblocks.fusionPlanetUnlock.alwaysUnlocked) {
+        boolean blockUnlocked = isContentUnlocked(Fblocks.fusionPlanetUnlock);
+
+        if (blockUnlocked) {
             if (!fPlanets.fusionPlanet.alwaysUnlocked) {
                 fPlanets.fusionPlanet.alwaysUnlocked = true;
                 fPlanets.fusionPlanet.unlock();
             }
-            Log.info("[FusionPlanet] init: fusionPlanet UNLOCKED (block alwaysUnlocked)");
+            Log.info("[FusionPlanet] init: fusionPlanet UNLOCKED (block already unlocked)");
         } else {
-            fPlanets.fusionPlanet.alwaysUnlocked = false;
             Log.info("[FusionPlanet] init: fusionPlanet LOCKED (waiting for tech tree)");
         }
     }
