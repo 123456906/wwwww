@@ -457,6 +457,7 @@ public class main extends Mod {
             allPlanets.add(Planets.notva);
             allPlanets.add(Planets.verilus);
             allPlanets.add(fusion);
+            allPlanets.add(fPlanets.superPlanet);
 
             for (UnlockableContent c : Vars.content.blocks()) {
                 if (c.minfo.mod == null) {
