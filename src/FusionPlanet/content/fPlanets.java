@@ -82,7 +82,7 @@ public class fPlanets {
         superPlanet= new Planet("super-planet", Planets.sun, 1.2f, 2) {{
             generator = new SuperPlanetGenerator();
             meshLoader = () -> new HexMesh(this, 6);
-            localizedName = "宇宙无敌超级大霹力星";
+            localizedName = "star";
             visible = true;
             accessible = true;
             alwaysUnlocked = true;
@@ -91,8 +91,8 @@ public class fPlanets {
             atmosphereColor = Color.valueOf("6688cc");
             atmosphereRadIn = 0.02f;
             atmosphereRadOut = 0.3f;
-            allowLaunchToNumbered = true;
-            startSector = 0;
+            allowLaunchToNumbered = false;
+            startSector = 73;
             defaultCore = Blocks.coreShard;
             ruleSetter = r -> {
                 r.waveTeam = Team.crux;

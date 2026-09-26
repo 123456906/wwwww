@@ -75,9 +75,10 @@ public class FtechTree {
                 return;
             }
 
-            // 1. 根节点：fusionPlanetUnlock
+            // 1. 根节点：fusionPlanetUnlock，必须 requiresUnlock = true
             TechNode superRoot = new TechNode(null, fusionPlanetUnlock,
                     ItemStack.with(copper, 1000, lead, 1000, titanium, 1000, silicon, 1000));
+            superRoot.requiresUnlock = true;
 
             // 2. 深拷贝赛普罗整棵科技树，挂到 superRoot 下
             deepCopyNode(Planets.serpulo.techTree, superRoot);
@@ -94,6 +95,7 @@ public class FtechTree {
                 ? src.requirements.clone()
                 : new ItemStack[0];
         TechNode copy = new TechNode(parent, src.content, reqs);
+        copy.requiresUnlock = src.requiresUnlock;
         for (TechNode child : src.children) {
             deepCopyNode(child, copy);
         }

@@ -46,18 +46,47 @@ public class main extends Mod {
         Events.on(ClientLoadEvent.class, e -> {
             createLinearFilterToggle();
             setupFusionPlanetUnlockIcon();
+            setupFusionPlanetIcon();
+            syncFusionPlanetLockState();
             Time.runTask(10f, this::showWelcomeDialog);
         });
     }
 
     private void setupFusionPlanetUnlockIcon(){
-        TextureRegion icon = Core.atlas.find("icons/planet");
+        TextureRegion icon = Core.atlas.find("2");
         if (icon.found()) {
             Fblocks.fusionPlanetUnlock.uiIcon = icon;
             Fblocks.fusionPlanetUnlock.region = icon;
-            Log.info("[FusionPlanet] fusionPlanetUnlock icon set to: planet");
+            Log.info("[FusionPlanet] fusionPlanetUnlock icon set to: 2");
         } else {
-            Log.err("[FusionPlanet] icon 'planet' not found in atlas");
+            Log.err("[FusionPlanet] icon '2' not found in atlas");
+        }
+    }
+
+    private void setupFusionPlanetIcon(){
+        if (fPlanets.fusionPlanet == null) return;
+        TextureRegion icon = Core.atlas.find("3");
+        if (icon.found()) {
+            fPlanets.fusionPlanet.uiIcon = icon;
+            fPlanets.fusionPlanet.iconColor = Color.white;
+            Log.info("[FusionPlanet] fusionPlanet icon set to: 3");
+        } else {
+            Log.err("[FusionPlanet] icon '3' not found in atlas");
+        }
+    }
+
+    private void syncFusionPlanetLockState(){
+        if (Fblocks.fusionPlanetUnlock == null || fPlanets.fusionPlanet == null) return;
+
+        if (Fblocks.fusionPlanetUnlock.alwaysUnlocked) {
+            if (!fPlanets.fusionPlanet.alwaysUnlocked) {
+                fPlanets.fusionPlanet.alwaysUnlocked = true;
+                fPlanets.fusionPlanet.unlock();
+            }
+            Log.info("[FusionPlanet] sync: fusionPlanet UNLOCKED (block unlocked)");
+        } else {
+            fPlanets.fusionPlanet.alwaysUnlocked = false;
+            Log.info("[FusionPlanet] sync: fusionPlanet LOCKED (block not unlocked)");
         }
     }
 
@@ -177,10 +206,7 @@ public class main extends Mod {
         Table left = new Table();
         left.setBackground(Styles.black6);
 
-        TextureRegion logoRegion = Core.atlas.find("ui/logo");
-        if (!logoRegion.found()) {
-            logoRegion = Core.atlas.find("logo");
-        }
+        TextureRegion logoRegion = Core.atlas.find("planet");
         if (logoRegion.found()) {
             float aspect = logoRegion.height / (float) logoRegion.width;
             float w = 320f;
@@ -190,6 +216,7 @@ public class main extends Mod {
             left.add(new Label("FUSION")).fontScale(2.6f)
                     .color(Color.valueOf("7a8cbf"))
                     .padTop(40f).padBottom(8f).row();
+            Log.err("[FusionPlanet] welcome logo 'planet' not found");
         }
 
         Label title = new Label("FUSION PLANET");
@@ -279,7 +306,7 @@ public class main extends Mod {
         clock.setFontScale(0.65f);
         clock.setColor(Color.valueOf("88a8b8"));
         statusBar.add(clock).padRight(12f);
-        
+
         window.add(statusBar).width(760f).padTop(2f).colspan(2).row();
 
         dialog.cont.add(window).width(760f).pad(0f);
@@ -455,11 +482,7 @@ public class main extends Mod {
         Events.on(UnlockEvent.class, e -> {
             if (e.content == Fblocks.fusionPlanetUnlock) {
                 Log.info("[FusionPlanet] UnlockEvent fired for fusionPlanetUnlock");
-                if (fPlanets.fusionPlanet != null && !fPlanets.fusionPlanet.alwaysUnlocked) {
-                    fPlanets.fusionPlanet.alwaysUnlocked = true;
-                    fPlanets.fusionPlanet.unlock();
-                    Log.info("[FusionPlanet] fusionPlanet unlocked via tech tree");
-                }
+                syncFusionPlanetLockState();
             }
         });
 
