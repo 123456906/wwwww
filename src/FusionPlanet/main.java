@@ -45,22 +45,10 @@ public class main extends Mod {
 
         Events.on(ClientLoadEvent.class, e -> {
             createLinearFilterToggle();
-            setupFusionPlanetUnlockIcon();
             setupFusionPlanetIcon();
             syncFusionPlanetLockState();
             Time.runTask(10f, this::showWelcomeDialog);
         });
-    }
-
-    private void setupFusionPlanetUnlockIcon(){
-        TextureRegion icon = Core.atlas.find("2");
-        if (icon.found()) {
-            Fblocks.fusionPlanetUnlock.uiIcon = icon;
-            Fblocks.fusionPlanetUnlock.region = icon;
-            Log.info("[FusionPlanet] fusionPlanetUnlock icon set to: 2");
-        } else {
-            Log.err("[FusionPlanet] icon '2' not found in atlas");
-        }
     }
 
     private void setupFusionPlanetIcon(){
@@ -206,7 +194,7 @@ public class main extends Mod {
         Table left = new Table();
         left.setBackground(Styles.black6);
 
-        TextureRegion logoRegion = Core.atlas.find("planet");
+        TextureRegion logoRegion = Core.atlas.find("1");
         if (logoRegion.found()) {
             float aspect = logoRegion.height / (float) logoRegion.width;
             float w = 320f;
@@ -216,7 +204,7 @@ public class main extends Mod {
             left.add(new Label("FUSION")).fontScale(2.6f)
                     .color(Color.valueOf("7a8cbf"))
                     .padTop(40f).padBottom(8f).row();
-            Log.err("[FusionPlanet] welcome logo 'planet' not found");
+            Log.err("[FusionPlanet] welcome logo '1' not found");
         }
 
         Label title = new Label("FUSION PLANET");
@@ -480,8 +468,9 @@ public class main extends Mod {
         });
 
         Events.on(UnlockEvent.class, e -> {
+            Log.info("[FusionPlanet] UnlockEvent fired: " + e.content.name);
             if (e.content == Fblocks.fusionPlanetUnlock) {
-                Log.info("[FusionPlanet] UnlockEvent fired for fusionPlanetUnlock");
+                Log.info("[FusionPlanet] detected fusionPlanetUnlock");
                 syncFusionPlanetLockState();
             }
         });
