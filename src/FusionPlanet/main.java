@@ -45,10 +45,22 @@ public class main extends Mod {
 
         Events.on(ClientLoadEvent.class, e -> {
             createLinearFilterToggle();
+            setupFusionPlanetUnlockIcon();
             setupFusionPlanetIcon();
-            syncFusionPlanetLockState();
+            applyInitialLockState();
             Time.runTask(10f, this::showWelcomeDialog);
         });
+    }
+
+    private void setupFusionPlanetUnlockIcon(){
+        TextureRegion icon = Core.atlas.find("2");
+        if (icon.found()) {
+            Fblocks.fusionPlanetUnlock.uiIcon = icon;
+            Fblocks.fusionPlanetUnlock.region = icon;
+            Log.info("[FusionPlanet] fusionPlanetUnlock icon set to: 2");
+        } else {
+            Log.err("[FusionPlanet] icon '2' not found in atlas");
+        }
     }
 
     private void setupFusionPlanetIcon(){
@@ -63,7 +75,7 @@ public class main extends Mod {
         }
     }
 
-    private void syncFusionPlanetLockState(){
+    private void applyInitialLockState(){
         if (Fblocks.fusionPlanetUnlock == null || fPlanets.fusionPlanet == null) return;
 
         if (Fblocks.fusionPlanetUnlock.alwaysUnlocked) {
@@ -71,10 +83,19 @@ public class main extends Mod {
                 fPlanets.fusionPlanet.alwaysUnlocked = true;
                 fPlanets.fusionPlanet.unlock();
             }
-            Log.info("[FusionPlanet] sync: fusionPlanet UNLOCKED (block unlocked)");
+            Log.info("[FusionPlanet] init: fusionPlanet UNLOCKED (block alwaysUnlocked)");
         } else {
             fPlanets.fusionPlanet.alwaysUnlocked = false;
-            Log.info("[FusionPlanet] sync: fusionPlanet LOCKED (block not unlocked)");
+            Log.info("[FusionPlanet] init: fusionPlanet LOCKED (waiting for tech tree)");
+        }
+    }
+
+    private void unlockFusionPlanetFromTech(){
+        if (fPlanets.fusionPlanet == null) return;
+        if (!fPlanets.fusionPlanet.alwaysUnlocked) {
+            fPlanets.fusionPlanet.alwaysUnlocked = true;
+            fPlanets.fusionPlanet.unlock();
+            Log.info("[FusionPlanet] tech tree unlocked fusionPlanet!");
         }
     }
 
@@ -194,7 +215,10 @@ public class main extends Mod {
         Table left = new Table();
         left.setBackground(Styles.black6);
 
-        TextureRegion logoRegion = Core.atlas.find("1");
+        TextureRegion logoRegion = Core.atlas.find("logo");
+        if (!logoRegion.found()) {
+            logoRegion = Core.atlas.find("ui/logo");
+        }
         if (logoRegion.found()) {
             float aspect = logoRegion.height / (float) logoRegion.width;
             float w = 320f;
@@ -204,7 +228,7 @@ public class main extends Mod {
             left.add(new Label("FUSION")).fontScale(2.6f)
                     .color(Color.valueOf("7a8cbf"))
                     .padTop(40f).padBottom(8f).row();
-            Log.err("[FusionPlanet] welcome logo '1' not found");
+            Log.err("[FusionPlanet] welcome logo 'logo' not found");
         }
 
         Label title = new Label("FUSION PLANET");
@@ -470,8 +494,8 @@ public class main extends Mod {
         Events.on(UnlockEvent.class, e -> {
             Log.info("[FusionPlanet] UnlockEvent fired: " + e.content.name);
             if (e.content == Fblocks.fusionPlanetUnlock) {
-                Log.info("[FusionPlanet] detected fusionPlanetUnlock");
-                syncFusionPlanetLockState();
+                Log.info("[FusionPlanet] detected fusionPlanetUnlock, unlocking fusionPlanet");
+                unlockFusionPlanetFromTech();
             }
         });
 
