@@ -1,14 +1,13 @@
 package FusionPlanet.content;
 
+import arc.Events;
 import arc.util.Log;
 import mindustry.content.Items;
 import mindustry.content.Planets;
 import mindustry.content.TechTree;
+import mindustry.content.TechTree.TechNode;
 import mindustry.game.EventType.ContentInitEvent;
-import arc.Events;
 import mindustry.type.ItemStack;
-
-import java.lang.reflect.Field;
 
 import static FusionPlanet.content.Fblocks.*;
 import static FusionPlanet.content.Funits.*;
@@ -69,36 +68,35 @@ public class FtechTree {
             TechTree.nodeProduce(carbide, () -> {});
         });
 
-        // ========== superPlanet 共享 serpulo 科技树 + 解锁 f 星的节点 ==========
+        // ========== superPlanet 独立科技树 ==========
         Events.on(ContentInitEvent.class, e -> {
             if (Planets.serpulo == null || Planets.serpulo.techTree == null) {
-                Log.err("[FtechTree] serpulo techTree is null, cannot attach unlock node.");
+                Log.err("[FtechTree] serpulo techTree null, cannot build superPlanet tree");
                 return;
             }
 
-            // superPlanet 直接复用 serpulo 的科技树
-            superPlanet.techTree = Planets.serpulo.techTree;
+            // 1. 根节点：fusionPlanetUnlock
+            TechNode superRoot = new TechNode(null, fusionPlanetUnlock,
+                    ItemStack.with(copper, 1000, lead, 1000, titanium, 1000, silicon, 1000));
 
-            // 用反射把 context 指向 serpulo 的根节点，然后用官方 API 添加节点
-            try {
-                Field contextField = TechTree.class.getDeclaredField("context");
-                contextField.setAccessible(true);
+            // 2. 深拷贝赛普罗整棵科技树，挂到 superRoot 下
+            deepCopyNode(Planets.serpulo.techTree, superRoot);
 
-                Object oldContext = contextField.get(null);
-                contextField.set(null, Planets.serpulo.techTree);
+            // 3. 赋给 superPlanet
+            superPlanet.techTree = superRoot;
 
-                TechTree.node(fusionPlanetUnlock, ItemStack.with(
-                        copper, 1000,
-                        lead, 1000,
-                        titanium, 1000, 
-                        silicon, 1000
-                ), () -> {});
-
-                contextField.set(null, oldContext);
-                Log.info("[FtechTree] Added fusionPlanet unlock node to serpulo/super tech tree.");
-            } catch (Exception ex) {
-                Log.err("[FtechTree] Reflection failed: " + ex);
-            }
+            Log.info("[FtechTree] superPlanet techTree built, root = fusionPlanetUnlock");
         });
+    }
+
+    private static TechNode deepCopyNode(TechNode src, TechNode parent) {
+        ItemStack[] reqs = src.requirements != null
+                ? src.requirements.clone()
+                : new ItemStack[0];
+        TechNode copy = new TechNode(parent, src.content, reqs);
+        for (TechNode child : src.children) {
+            deepCopyNode(child, copy);
+        }
+        return copy;
     }
 }

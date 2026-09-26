@@ -45,8 +45,20 @@ public class main extends Mod {
 
         Events.on(ClientLoadEvent.class, e -> {
             createLinearFilterToggle();
+            setupFusionPlanetUnlockIcon();
             Time.runTask(10f, this::showWelcomeDialog);
         });
+    }
+
+    private void setupFusionPlanetUnlockIcon(){
+        TextureRegion icon = Core.atlas.find("icons/planet");
+        if (icon.found()) {
+            Fblocks.fusionPlanetUnlock.uiIcon = icon;
+            Fblocks.fusionPlanetUnlock.region = icon;
+            Log.info("[FusionPlanet] fusionPlanetUnlock icon set to: planet");
+        } else {
+            Log.err("[FusionPlanet] icon 'planet' not found in atlas");
+        }
     }
 
     private void createLinearFilterToggle(){
@@ -169,35 +181,16 @@ public class main extends Mod {
         if (!logoRegion.found()) {
             logoRegion = Core.atlas.find("logo");
         }
-        TextureRegion sideRegion = Core.atlas.find("2");
-        if (!sideRegion.found()) {
-            sideRegion = Core.atlas.find("ui/2");
-        }
-
-        Table logoRow = new Table();
-
         if (logoRegion.found()) {
             float aspect = logoRegion.height / (float) logoRegion.width;
-            float w = 220f;
+            float w = 320f;
             float h = w * aspect;
-            logoRow.add(new Image(logoRegion)).size(w, h).padRight(14f);
+            left.add(new Image(logoRegion)).size(w, h).padTop(24f).padBottom(16f).row();
         } else {
-            Label fallback = new Label("FUSION");
-            fallback.setFontScale(2.0f);
-            fallback.setColor(Color.valueOf("7a8cbf"));
-            logoRow.add(fallback).padRight(14f);
+            left.add(new Label("FUSION")).fontScale(2.6f)
+                    .color(Color.valueOf("7a8cbf"))
+                    .padTop(40f).padBottom(8f).row();
         }
-
-        if (sideRegion.found()) {
-            float aspect = sideRegion.height / (float) sideRegion.width;
-            float w = 90f;
-            float h = w * aspect;
-            logoRow.add(new Image(sideRegion)).size(w, h);
-        } else {
-            Log.err("[welcome] image '2' not found in atlas");
-        }
-
-        left.add(logoRow).padTop(24f).padBottom(16f).row();
 
         Label title = new Label("FUSION PLANET");
         title.setFontScale(1.55f);
@@ -286,7 +279,7 @@ public class main extends Mod {
         clock.setFontScale(0.65f);
         clock.setColor(Color.valueOf("88a8b8"));
         statusBar.add(clock).padRight(12f);
-
+        
         window.add(statusBar).width(760f).padTop(2f).colspan(2).row();
 
         dialog.cont.add(window).width(760f).pad(0f);
@@ -457,6 +450,17 @@ public class main extends Mod {
                 }
             }
             Log.info("All vanilla content unlocked on all planets!");
+        });
+
+        Events.on(UnlockEvent.class, e -> {
+            if (e.content == Fblocks.fusionPlanetUnlock) {
+                Log.info("[FusionPlanet] UnlockEvent fired for fusionPlanetUnlock");
+                if (fPlanets.fusionPlanet != null && !fPlanets.fusionPlanet.alwaysUnlocked) {
+                    fPlanets.fusionPlanet.alwaysUnlocked = true;
+                    fPlanets.fusionPlanet.unlock();
+                    Log.info("[FusionPlanet] fusionPlanet unlocked via tech tree");
+                }
+            }
         });
 
         Log.info("Fusion Planet loaded!");

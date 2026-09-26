@@ -30,7 +30,7 @@ public class fPlanets {
         fusionPlanet.localizedName = "Fusion World";
         fusionPlanet.visible = true;
         fusionPlanet.accessible = true;
-        fusionPlanet.alwaysUnlocked = false ;
+        fusionPlanet.alwaysUnlocked = false;
         fusionPlanet.bloom = false;
         fusionPlanet.defaultEnv = Env.terrestrial;
         fusionPlanet.atmosphereColor = Color.valueOf("7a8cbf");
@@ -44,7 +44,7 @@ public class fPlanets {
 
         Color ringColor1 = Color.valueOf("4C4C4C");
         Color ringColor2 = Color.valueOf("59B368");
-        Color glowColor = Color.valueOf("59B368");
+        Color glowColor = Color.valueOf("FFFFFF");
 
         fusionPlanet.cloudMeshLoader = () -> new MultiMesh(
                 new DysonRingMesh(fusionPlanet, 1.65f, 0.30f, 768, ringColor1, ringColor2),
@@ -102,10 +102,10 @@ public class fPlanets {
                 r.placeRangeCheck = true;
             };
         }};
-        cliffboundReaches = new SectorPreset("cliffbound-reaches", fusionPlanet, 5);
+        cliffboundReaches = new SectorPreset("cliffbound-reaches", superPlanet, 73);
         cliffboundReaches.localizedName = "\uF657\uF657cliffboundReaches\uF7A9\uF657\uF657";
         cliffboundReaches.description = "检测到此地正源源不断发射未知电信号。";
-        cliffboundReaches.difficulty = 73;
+        cliffboundReaches.difficulty = 3;
         cliffboundReaches.captureWave = 30;
         cliffboundReaches.alwaysUnlocked = true;
     }
