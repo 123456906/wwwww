@@ -20,11 +20,11 @@ public class MirrorSystemPlanets {
     public static void load() {
         // 1. 确保 AntichthonBlocks 和生成器的蓝图已加载
         AntichthonBlocks.load();
-        FusionPlanet.content.AntichthonGenerator.loadBlueprints();
+        MirrorWorld.content.AntichthonGenerator.loadBlueprints();
 
         // ========== 对地星 (Antichthon) ==========
         antichthon = new Planet("antichthon", Planets.sun, 1f, 2);
-        antichthon.generator = new FusionPlanet.content.AntichthonGenerator(); // 当前包直接调用即可
+        antichthon.generator = new MirrorWorld.content.AntichthonGenerator(); // 当前包直接调用即可
         antichthon.localizedName = "Antichthon";
         antichthon.visible = true;
         antichthon.accessible = true;
