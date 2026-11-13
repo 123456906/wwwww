@@ -1,4 +1,4 @@
-package FusionPlanet.content;
+package MirrorWorld.content;
 
 import arc.Events;
 import arc.util.Log;
@@ -9,15 +9,15 @@ import mindustry.content.TechTree.TechNode;
 import mindustry.game.EventType.ContentInitEvent;
 import mindustry.type.ItemStack;
 
-import static FusionPlanet.content.Fblocks.*;
-import static FusionPlanet.content.Funits.*;
-import static FusionPlanet.content.fPlanets.*;
+import static MirrorWorld.content.MrBlocks.*;
+import static MirrorWorld.content.MrUnits.*;
+import static MirrorWorld.content.MirrorSystemPlanets.*;
 import static mindustry.content.Items.*;
 
-public class FtechTree {
+public class MrTechTree {
     public static void load() {
         // ========== fusionPlanet 自己的科技树 ==========
-        fusionPlanet.techTree = TechTree.nodeRoot("fusion-planet", coreEvoke, () -> {
+        antichthon.techTree = TechTree.nodeRoot("antichthon", coreEvoke, () -> {
 
             TechTree.node(assimilator, ItemStack.with(
                     copper, 2000,
@@ -67,7 +67,7 @@ public class FtechTree {
             TechTree.nodeProduce(oxide, () -> {});
             TechTree.nodeProduce(carbide, () -> {});
         });
-
+/*
         // ========== superPlanet 独立科技树 ==========
         Events.on(ContentInitEvent.class, e -> {
             if (Planets.serpulo == null || Planets.serpulo.techTree == null) {
@@ -87,9 +87,9 @@ public class FtechTree {
             superPlanet.techTree = superRoot;
 
             Log.info("[FtechTree] superPlanet techTree built, root = fusionPlanetUnlock");
-        });
+        });*/
     }
-
+/*
     private static TechNode deepCopyNode(TechNode src, TechNode parent) {
         ItemStack[] reqs = src.requirements != null
                 ? src.requirements.clone()
@@ -100,5 +100,5 @@ public class FtechTree {
             deepCopyNode(child, copy);
         }
         return copy;
-    }
+    }*/
 }

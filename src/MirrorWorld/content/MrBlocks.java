@@ -1,4 +1,4 @@
-package FusionPlanet.content;
+package MirrorWorld.content;
 
 import arc.graphics.Color;
 import arc.graphics.g2d.Lines;
@@ -22,13 +22,12 @@ import mindustry.world.Block;
 import mindustry.world.blocks.defense.turrets.ItemTurret;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.storage.CoreBlock;
-import mindustry.world.draw.*;
 import mindustry.world.draw.DrawTurret;
 import mindustry.world.meta.BuildVisibility;
 
-import static FusionPlanet.content.Funits.falcon;
+import static MirrorWorld.content.MrUnits.falcon;
 
-public class Fblocks {
+public class MrBlocks {
 
     public static Block coreEvoke;
     public static Block assimilator;

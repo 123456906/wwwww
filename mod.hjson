@@ -2,19 +2,19 @@
 displayName: "Fusion Planet Mod"
 
 #the internal name of your mod
-name: "FusionPlanet"
+name: "MirrorWorld"
 
 #your name
 author: "YZYDR"
 
 #the fully qualified main class of the mod
-main: "FusionPlanet.main"
+main: "MirrorWorld.MirrorWorld"
 
 #the mod description as seen in the mod dialog
 description: "你瞅啥"
 
 #the mod version
-version: 1.4.8
+version: 2.0.0
 
 #the minimum game build required to run this mod
 minGameVersion: 158

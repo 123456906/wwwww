@@ -1,19 +1,15 @@
-package FusionPlanet.content;
+package MirrorWorld.content;
 
 import arc.graphics.Color;
-import arc.math.Mathf;
 import mindustry.content.Fx;
-import mindustry.entities.Effect;
 import mindustry.entities.bullet.BasicBulletType;
 import mindustry.entities.bullet.LaserBulletType;
 import mindustry.entities.bullet.SapBulletType;
 import mindustry.type.Weapon;
-import mindustry.type.weapons.*;
 import mindustry.gen.Sounds;
-import mindustry.graphics.Drawf;
 import mindustry.type.UnitType;
 
-public class Funits {
+public class MrUnits {
     public static UnitType falcon;
     public static UnitType nova = new UnitType("nova") {{
         hitSize = 32f * 4f / 3f;
