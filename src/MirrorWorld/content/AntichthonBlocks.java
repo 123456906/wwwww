@@ -1,4 +1,4 @@
-package FusionPlanet.content;
+package MirrorWorld.content;
 
 import arc.graphics.Color;
 import mindustry.content.StatusEffects;
