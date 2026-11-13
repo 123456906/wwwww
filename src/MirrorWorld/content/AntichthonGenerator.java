@@ -1,4 +1,4 @@
-package FusionPlanet.content;
+package MirrorWorld.content;
 
 import arc.graphics.Color;
 import arc.math.Mathf;
@@ -6,6 +6,8 @@ import arc.math.geom.Vec3;
 import arc.util.Log;
 import arc.util.noise.Simplex;
 import mindustry.content.Blocks;
+import mindustry.game.Schematic;
+import mindustry.game.Schematic.Stile;
 import mindustry.game.Schematics;
 import mindustry.game.Team;
 import mindustry.maps.generators.PlanetGenerator;
@@ -24,7 +26,7 @@ public class AntichthonGenerator extends PlanetGenerator {
     public static final float heightScl = 1.01f;
     public static final float waterOffset = 0.04f;
 
-    public static final float TILT_ANGLE = 14f * Mathf.degRad;
+    public static final float TILT_ANGLE = 14f * 3.1415926535f / 180f;
     public static final float TILT_COS = Mathf.cos(TILT_ANGLE);
     public static final float TILT_SIN = Mathf.sin(TILT_ANGLE);
 
@@ -65,7 +67,6 @@ public class AntichthonGenerator extends PlanetGenerator {
     }
 
     public AntichthonGenerator() {
-        baseSeed = SEED;
     }
 
     @Override
@@ -80,7 +81,8 @@ public class AntichthonGenerator extends PlanetGenerator {
             Block block = getBlock(pos, true);
             if (block != null) {
                 out.set(block.mapColor);
-                if (block.isLiquid()) {
+                // 向下转型 Floor 来获取 liquidDrop
+                if (block instanceof Floor && ((Floor) block).liquidDrop != null) {
                     out.mul(0.7f);
                     out.a = 1.0f;
                 } else {
@@ -112,7 +114,6 @@ public class AntichthonGenerator extends PlanetGenerator {
             float py = pos.y * scl;
             float pz = pos.z * scl;
 
-            // 1. 基础地形
             float latNoise1 = Simplex.noise3d(SEED + 333, 3, 0.5f, 4.0f, pos.x, pos.y, pos.z);
             float latNoise2 = Simplex.noise3d(SEED + 444, 2, 0.5f, 12.0f, pos.x, pos.y, pos.z);
 
@@ -142,7 +143,6 @@ public class AntichthonGenerator extends PlanetGenerator {
                 if (res == AntichthonBlocks.paleMoss || res == AntichthonBlocks.deepPaleMoss) res = AntichthonBlocks.rustyGravel;
             }
 
-            // 2. 水陆判定
             if (absLat < 0.28f) {
                 float lakeNoise = Simplex.noise3d(SEED + 111, 4, 0.5f, 5.0f, pos.x, pos.y, pos.z);
 
@@ -159,27 +159,23 @@ public class AntichthonGenerator extends PlanetGenerator {
                 }
             }
 
-            // 3. 基地覆盖（整体放大）
             float baseDist = pos.dst(basePos);
             if (baseDist < baseRange) {
                 float baseNoise = Simplex.noise3d(SEED, 3, 0.4f, 5.5f, pos.x, pos.y + 200f, pos.z) * 0.015f;
                 int mod1 = (baseDist % baseFreq < baseFreq / 2f) ? 1 : 0;
 
-                // 主环间隙
                 float ringNoise = Simplex.noise3d(SEED + 777, 2, 0.5f, 9.0f, pos.x, pos.y + 400f, pos.z) * 0.006f;
                 float ringPhase = (baseDist + ringNoise) % baseFreq;
                 if (ringPhase < baseFreq * ringGapRatio) {
                     return res;
                 }
 
-                // 子环间隙
                 float subGapNoise = Simplex.noise3d(SEED + 888, 2, 0.5f, 12.0f, pos.x, pos.y + 600f, pos.z) * 0.005f;
                 float subPhase = (baseDist + subGapNoise) % baseFreq2;
                 if (subPhase < baseFreq2 * subGapRatio) {
                     return res;
                 }
 
-                // 原版判定公式，阈值放大
                 if (baseDist * 0.85f + baseNoise + mod1 * 0.07f < baseThreshold) {
                     float mod2 = (baseDist + 0.01f) % baseFreq2;
                     if (mod2 < baseFreq2 * 0.65f) return Blocks.metalFloor;
@@ -187,13 +183,11 @@ public class AntichthonGenerator extends PlanetGenerator {
                 }
             }
 
-            // olivine
             float olivine = Simplex.noise3d(SEED + 5000, 4, 0.55f, 1f / 2f, px, py + 999f, pz);
             if (olivine > 0.55f && !visualOnly) {
                 return AntichthonBlocks.olivineSand;
             }
 
-            // lichen
             if (res == AntichthonBlocks.paleMoss && !visualOnly) {
                 float lichenNoise = Simplex.noise3d(SEED + 6000, 3, 0.5f, 1f / 4f, px, py + 500f, pz);
                 if (lichenNoise > 0.65f) return AntichthonBlocks.lichen;
@@ -251,7 +245,7 @@ public class AntichthonGenerator extends PlanetGenerator {
                     int ty = testY + dy;
                     if (tx < 0 || ty < 0 || tx >= w || ty >= h) continue;
                     Tile t = tiles.getn(tx, ty);
-                    if (t.block() != Blocks.air || t.floor().isLiquid) {
+                    if (t.block() != Blocks.air || (t.floor() instanceof Floor && ((Floor) t.floor()).liquidDrop != null)) {
                         isSafe = false;
                         break;
                     }
@@ -294,7 +288,7 @@ public class AntichthonGenerator extends PlanetGenerator {
                     Block entry = ores[oi];
                     float freq = -0.1f - oi * 0.01f;
                     if (Math.abs(0.5f - noise(offsetX, offsetY + oi * 999, 2, 0.7f, 40 + oi * 2f, 1f)) > 0.22f + oi * 0.01f &&
-                        Math.abs(0.5f - noise(offsetX, offsetY - oi * 999, 1, 1f, 30 + oi * 4f, 1f)) > 0.37f + freq) {
+                            Math.abs(0.5f - noise(offsetX, offsetY - oi * 999, 1, 1f, 30 + oi * 4f, 1f)) > 0.37f + freq) {
                         tile.setOverlay(entry);
                         break;
                     }
@@ -308,7 +302,7 @@ public class AntichthonGenerator extends PlanetGenerator {
                     Tile t = tiles.getn(x, y);
                     if (t == null) continue;
                     if (t.block() != Blocks.air) continue;
-                    if (t.floor() == null || t.floor().isLiquid) continue;
+                    if (t.floor() == null || (t.floor() instanceof Floor && ((Floor) t.floor()).liquidDrop != null)) continue;
 
                     float maxDark = 0f;
                     for (int dx = -1; dx <= 1; dx++) {
@@ -370,15 +364,8 @@ public class AntichthonGenerator extends PlanetGenerator {
             if (r > 0.6f && r <= 0.85f) bp = bp2;
             else if (r > 0.85f) bp = bp3;
 
-            int rot = rand.nextInt(4);
-
             int bw = bp.width;
             int bh = bp.height;
-            if (rot % 2 != 0) {
-                int tmp = bw;
-                bw = bh;
-                bh = tmp;
-            }
 
             int startX = cx - bw / 2;
             int startY = cy - bh / 2;
@@ -389,7 +376,7 @@ public class AntichthonGenerator extends PlanetGenerator {
             for (int i = 0; i < bw; i++) {
                 for (int j = 0; j < bh; j++) {
                     Tile t = tiles.getn(startX + i, startY + j);
-                    if (t.block() != Blocks.air || t.floor().isLiquid) {
+                    if (t.block() != Blocks.air || (t.floor() instanceof Floor && ((Floor) t.floor()).liquidDrop != null)) {
                         canPlace = false;
                         break;
                     }
@@ -398,13 +385,20 @@ public class AntichthonGenerator extends PlanetGenerator {
             }
 
             if (canPlace) {
-                bp.place(tiles, cx, cy, rot);
+                for (Stile stile : bp.tiles) {
+                    int tx = startX + stile.x;
+                    int ty = startY + stile.y;
+                    Tile t = tiles.getn(tx, ty);
 
-                for (int i = 0; i < bw; i++) {
-                    for (int j = 0; j < bh; j++) {
-                        Tile t = tiles.getn(startX + i, startY + j);
-                        if (t.build != null && t.isCenter()) {
-                            t.build.health = t.build.maxHealth * rand.random(0.2f, 1f);
+                    if (t != null) {
+                        // Stile 只包含 block 和 rotation，没有 team 和 floor、overlay
+                        if (stile.block != null && stile.block != Blocks.air) {
+                            // 这里采用默认的中立队伍（Team.derelict）进行放置
+                            t.setBlock(stile.block, Team.derelict, stile.rotation);
+                            if (t.build != null) {
+                                t.build.rotation = stile.rotation;
+                                t.build.health = t.build.maxHealth * rand.random(0.2f, 1f);
+                            }
                         }
                     }
                 }
