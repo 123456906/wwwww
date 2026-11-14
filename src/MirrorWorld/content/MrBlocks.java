@@ -1,6 +1,7 @@
 package MirrorWorld.content;
 
 import arc.graphics.Color;
+import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
 import arc.struct.ObjectMap;
@@ -14,16 +15,14 @@ import mindustry.gen.Building;
 import mindustry.gen.Bullet;
 import mindustry.gen.Sounds;
 import mindustry.gen.Unit;
-import mindustry.graphics.CacheLayer;
 import mindustry.graphics.Drawf;
+import mindustry.graphics.Layer;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.blocks.defense.turrets.ItemTurret;
-import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.storage.CoreBlock;
 import mindustry.world.draw.DrawTurret;
-import mindustry.world.meta.BuildVisibility;
 
 import static MirrorWorld.content.MrUnits.falcon;
 
@@ -32,18 +31,8 @@ public class MrBlocks {
     public static Block coreEvoke;
     public static Block assimilator;
     public static Block summonTurret;
-    public static Block fusionPlanetUnlock;
-
-    public static Floor blueGrass;
-    public static Floor purpleStone;
-    public static Floor cyanWater;
-    public static Floor indigoSand;
-    public static Floor magentaMoss;
-    public static Floor glowSpore;
-    public static Floor indigoIce;
 
     public static void load() {
-
         coreEvoke = new CoreBlock("core-evoke") {{
             size = 4;
             squareSprite = false;
@@ -147,72 +136,7 @@ public class MrBlocks {
                 });
             }};
         }};
-
-        blueGrass = new Floor("blue-grass") {{
-            variants = 3;
-            speedMultiplier = 1f;
-            mapColor.set(Color.valueOf("6688cc"));
-            supportsOverlay = true;
-        }};
-
-        purpleStone = new Floor("purple-stone") {{
-            variants = 3;
-            speedMultiplier = 0.8f;
-            mapColor.set(Color.valueOf("9966cc"));
-        }};
-
-        cyanWater = new Floor("cyan-water") {{
-            speedMultiplier = 0.2f;
-            variants = 0;
-            liquidDrop = Liquids.water;
-            liquidMultiplier = 1.5f;
-            isLiquid = true;
-            status = StatusEffects.wet;
-            statusDuration = 120f;
-            drownTime = 200f;
-            cacheLayer = CacheLayer.water;
-            albedo = 0.9f;
-            supportsOverlay = true;
-            mapColor.set(Color.valueOf("44ccdd"));
-        }};
-
-        indigoSand = new Floor("indigo-sand") {{
-            variants = 3;
-            speedMultiplier = 0.9f;
-            mapColor.set(Color.valueOf("4455aa"));
-        }};
-
-        magentaMoss = new Floor("magenta-moss") {{
-            variants = 3;
-            speedMultiplier = 0.85f;
-            mapColor.set(Color.valueOf("cc88dd"));
-        }};
-
-        glowSpore = new Floor("glow-spore") {{
-            variants = 2;
-            speedMultiplier = 0.95f;
-            mapColor.set(Color.valueOf("88ddff"));
-        }};
-
-        indigoIce = new Floor("indigo-ice") {{
-            variants = 2;
-            speedMultiplier = 0.7f;
-            mapColor.set(Color.valueOf("334477"));
-        }};
-        
-        fusionPlanetUnlock = new Block("fusion-planet-unlock") {{
-        localizedName = "Fusion World";
-        description = "解锁融合世界，开启新的征程。";
-        size = 2;
-        health = 100;
-        buildVisibility = BuildVisibility.hidden;
-        alwaysUnlocked = false;
-        requirements(Category.effect, ItemStack.with(
-            Items.copper, 1000,
-            Items.lead, 1000
-        ));
-      }};
-    }
+    } // ★ 修复：补上 load() 方法缺失的闭合大括号
 
     public static class Assimilator extends Block {
         public float range = 60f;
@@ -271,11 +195,47 @@ public class MrBlocks {
             }
 
             @Override
+            public void draw() {
+                super.draw();
+
+                // ★ 常驻光效：在被转化的单位头顶显示倒计时光环
+                if (!progress.isEmpty()) {
+                    float z = Draw.z();
+                    Draw.z(Layer.effect);
+
+                    for (Unit u : progress.keys()) {
+                        if (u == null || u.dead()) continue;
+
+                        float prog = progress.get(u, 0f);
+                        float required = requiredTime(u.maxHealth());
+                        float p = Mathf.clamp(prog / required);
+
+                        float radius = u.hitSize() / 2f + 6f;
+                        float pulse = 0.8f + Mathf.sin(Time.time * 0.1f) * 0.2f;
+
+                        // 底层脉冲光晕
+                        Drawf.circles(u.x, u.y, radius * 1.1f, Color.valueOf("aaddff").a(0.15f * pulse));
+                        Drawf.circles(u.x, u.y, radius * 1.4f, Color.valueOf("bbddff").a(0.08f * pulse));
+
+                        // 进度圆环
+                        Lines.stroke(3f, Color.valueOf("aaddff").a(0.85f));
+                        Lines.arc(u.x, u.y, radius, p, -90f);
+
+                        // 进度高光
+                        Lines.stroke(1.5f, Color.valueOf("ffffff").a(0.9f));
+                        Lines.arc(u.x, u.y, radius, p, -90f);
+                    }
+                    Draw.z(z);
+                }
+            }
+
+            @Override
             public void drawSelect() {
                 Assimilator self = (Assimilator) block;
 
                 float pulse = 0.75f + Mathf.sin(Time.time * 0.05f) * 0.25f;
 
+                // ★ 仅点击时显示的范围虚线/光圈
                 Drawf.circles(x, y, self.range * 1.10f, Color.valueOf("aaddff").a(0.05f * pulse));
                 Drawf.circles(x, y, self.range * 1.04f, Color.valueOf("aaddff").a(0.09f * pulse));
                 Drawf.circles(x, y, self.range * 0.55f, Color.valueOf("aaddff").a(0.04f * pulse));
@@ -367,6 +327,7 @@ public class MrBlocks {
             public void draw() {
                 super.draw();
 
+                // ★ 常驻光效：召唤爆发时的光环
                 if (glowTime > 0f) {
                     float glow = Mathf.clamp(glowTime / 45f);
 
@@ -383,6 +344,7 @@ public class MrBlocks {
 
             @Override
             public void drawSelect() {
+                // ★ 仅点击时显示的射程虚线与进度条
                 float progress = Mathf.clamp(damageAccumulated / summonThreshold);
                 float pulse = 0.8f + Mathf.sin(Time.time * 0.07f) * 0.2f;
 
