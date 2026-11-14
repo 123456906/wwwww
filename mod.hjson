@@ -5,7 +5,7 @@ displayName: "MirrorWorld"
 name: "MirrorWorld"
 
 #your name
-author: "YZYDR"
+author: "无固定作者"
 
 #the fully qualified main class of the mod
 main: "MirrorWorld.MirrorWorld"
