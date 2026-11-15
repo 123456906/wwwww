@@ -7,17 +7,18 @@ import mindustry.content.Weathers;
 import mindustry.game.Team;
 import mindustry.graphics.g3d.*;
 import mindustry.type.Planet;
-import mindustry.type.SectorPreset;
 import mindustry.world.meta.Env;
 import mindustry.type.Weather;
 
 public class MirrorSystemPlanets {
     public static Planet antichthon;
-    public static SectorPreset undevelopedZone;
-    public static SectorPreset abandonedFerry;
-    public static SectorPreset myceliumBastion;
+
+    private static boolean loaded;
 
     public static void load() {
+        if(loaded) return;
+        loaded = true;
+
         // 1. 确保 AntichthonBlocks 和生成器的蓝图已加载
         AntichthonBlocks.load();
         MirrorWorld.content.AntichthonGenerator.loadBlueprints();
@@ -64,27 +65,5 @@ public class MirrorSystemPlanets {
             r.env = Env.terrestrial;
             r.placeRangeCheck = true;
         };
-
-        // ========== 区块预设 ==========
-        undevelopedZone = new SectorPreset("undeveloped-zone", antichthon, 5);
-        undevelopedZone.localizedName = "未开发区";
-        undevelopedZone.description = "一片尚未被开发的区域";
-        undevelopedZone.difficulty = 1;
-        undevelopedZone.captureWave = 20;
-        undevelopedZone.alwaysUnlocked = true;
-
-        abandonedFerry = new SectorPreset("abandoned-ferry", antichthon, 1);
-        abandonedFerry.localizedName = "废弃渡口";
-        abandonedFerry.description = "据说这里藏着先驱者曾经放在这里的武器（假的）";
-        abandonedFerry.difficulty = 3;
-        abandonedFerry.captureWave = 20;
-        abandonedFerry.alwaysUnlocked = false;
-
-        myceliumBastion = new SectorPreset("mycelium-bastion", antichthon, 1);
-        myceliumBastion.localizedName = "菌丝壁垒";
-        myceliumBastion.description = "据说这里藏着先驱者曾经放在这里的武器";
-        myceliumBastion.difficulty = 6;
-        myceliumBastion.captureWave = 30;
-        myceliumBastion.alwaysUnlocked = false;
     }
 }

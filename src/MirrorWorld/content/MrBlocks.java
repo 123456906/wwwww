@@ -113,7 +113,11 @@ public class MrBlocks {
     /* 核心炮塔使用的弹药 */
     public static BulletType echoCoreBullet, mirrorCoreBullet;
 
+    private static boolean loaded;
+
     public static void load() {
+        if(loaded) return;
+        loaded = true;
 
         // 建造需求与配方直接引用 MrItems 的字段，确保物品/流体先创建（MrItems.load() 幂等）
         MrItems.load();

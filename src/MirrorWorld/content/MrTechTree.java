@@ -16,7 +16,12 @@ import static mindustry.type.ItemStack.with;
  */
 public class MrTechTree {
 
+    private static boolean loaded;
+
     public static void load() {
+        if(loaded) return;
+        loaded = true;
+
         antichthon.techTree = TechTree.nodeRoot("antichthon", coreEcho, () -> {
 
             /* ================= 核心 ================= */

@@ -23,6 +23,46 @@ import mindustry.type.StatusEffect;
 import static MirrorWorld.content.MrItems.*;
 import static mindustry.Vars.world;
 
+/**
+ * 反地球（Antichthon）全部地形内容，单文件版。
+ *
+ * 包含：
+ *   1. 原有地形与液氮（未改动）
+ *   2. 绯红白杆菌：绯红菌地毯 / 白杆地毯，踩在上面的建筑每 2 秒掉 10 血
+ *   3. 第二种墙壁生成：峰脊墙脉 + 团块菌室（与原有的黑暗度判定并存）
+ *   4. 蘑菇簇 / 石头 / 巨型蘑菇（TreeBlock）
+ *
+ * 在 PlanetGenerator.genTile 里的接法（原有的黑暗度判定保持不动，只补 else if）：
+ *
+ *   public void genTile(Vec3 position, TileGen tile){
+ *       tile.floor = getBlock(position, false);
+ *       tile.block = tile.floor.asFloor().wall;
+ *
+ *       // 你原有的黑暗度判定
+ *       if(darkness > threshold){
+ *           tile.block = AntichthonBlocks.crimsonCarpetWall;
+ *       }
+ *       // 新增：第二种墙壁生成
+ *       else if(AntichthonBlocks.veinWall(position, seed + 41, 9f, 0.86f)){
+ *           tile.block = AntichthonBlocks.crimsonVeinWall;
+ *       }
+ *       else if(AntichthonBlocks.blobWall(position, seed + 77, 6f, 0.74f)){
+ *           tile.block = AntichthonBlocks.crimsonBloomWall;
+ *       }
+ *       else{
+ *           tile.block = Blocks.air;
+ *       }
+ *
+ *       // 空地上撒装饰
+ *       if(tile.block == Blocks.air){
+ *           if(scatter(position, seed + 913, 26f, 0.90f)) tile.block = crimsonMushroomCluster;
+ *           else if(scatter(position, seed + 517, 34f, 0.88f)) tile.block = crimsonRock;
+ *           else if(scatter(position, seed + 631, 60f, 0.955f)) tile.block = giantMushroom;
+ *       }
+ *   }
+ *
+ * 想让菌脉压过暗墙，就把 else if 改成 if。
+ */
 public class AntichthonBlocks {
     public static Liquid liquidCO2;
 
@@ -70,8 +110,12 @@ public class AntichthonBlocks {
     }
 
     private static boolean damageTaskReady = false;
+    private static boolean loaded;
 
     public static void load() {
+        if(loaded) return;
+        loaded = true;
+
         // 地形里的液体地板要引用 MrItems 的流体，先确保物品/流体已创建（幂等）
         MrItems.load();
 

@@ -323,7 +323,12 @@ public class MrUnits {
         alwaysUnlocked = false;
     }};
 
+    private static boolean loaded;
+
     public static void load() {
+        if(loaded) return;
+        loaded = true;
+
         falcon = new UnitType("falcon") {{
             hitSize = 32f;
             health = 800f;
