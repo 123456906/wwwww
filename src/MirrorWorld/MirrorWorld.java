@@ -62,7 +62,8 @@ public class MirrorWorld extends Mod {
 
     // ================= 启动界面 =================
     private void showLauncherDialog() {
-        Dialog dialog = new Dialog("", (Dialog.DialogStyle) Styles.black8);
+        Dialog dialog = new Dialog("", Styles.defaultDialog);
+        dialog.setBackground(Styles.black8);
         dialog.setFillParent(true);
         dialog.cont.clear();
         dialog.cont.margin(0f);
