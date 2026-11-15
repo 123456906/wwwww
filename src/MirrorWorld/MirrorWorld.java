@@ -1,5 +1,7 @@
 package MirrorWorld;
 
+import MirrorWorld.content.AntichthonBlocks;
+import MirrorWorld.content.AntichthonGenerator;
 import MirrorWorld.content.MrBlocks;
 import MirrorWorld.content.MrTechTree;
 import MirrorWorld.content.MrUnits;
@@ -243,6 +245,8 @@ public class MirrorWorld extends Mod {
 
         MrUnits.load();
         MrBlocks.load();
+        AntichthonBlocks.load();
+        AntichthonGenerator.loadBlueprints();
         PrecursorTeam.load();
         MirrorSystemPlanets.load();
         MrTechTree.load();

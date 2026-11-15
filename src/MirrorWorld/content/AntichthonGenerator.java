@@ -38,6 +38,26 @@ public class AntichthonGenerator extends PlanetGenerator {
     public static final float ringGapRatio = 0.12f;
     public static final float subGapRatio = 0.08f;
 
+    /* ================= 新增：外观调参区（想改观感只动这里） ================= */
+
+    /** 墙壁生成 A：黑暗度阈值。0 表示“有一点暗就起墙”，会糊成一片；调高墙更少更成块 */
+    public static final float darkWallThreshold = 0.012f;
+
+    /** 墙壁生成 B：峰脊菌脉。threshold 越大墙脉越细越少（0.88~0.93 比较好看） */
+    public static final float veinScale = 52f;
+    public static final float veinThreshold = 0.905f;
+
+    /** 墙壁生成 C：团块菌室。阈值 0.78~0.84 */
+    public static final float blobScale = 34f;
+    public static final float blobThreshold = 0.8f;
+
+    /** 出生点留白半径，避免落地就被墙围死 */
+    public static final int spawnClearRadius = 22;
+
+    /** 绯红白杆菌生物群系：覆盖率与边缘过渡 */
+    public static final float crimsonScale = 1.9f;
+    public static final float crimsonThreshold = 0.52f;
+
     public static final Floor[][] marsArr = {
             {AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.rustyGravel, AntichthonBlocks.redRock, AntichthonBlocks.redRock, AntichthonBlocks.hematiteRock, AntichthonBlocks.hematiteRock},
             {AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redSand, AntichthonBlocks.redRock, AntichthonBlocks.redRock, AntichthonBlocks.redRock, AntichthonBlocks.hematiteRock, AntichthonBlocks.hematiteRock},
@@ -81,7 +101,6 @@ public class AntichthonGenerator extends PlanetGenerator {
             Block block = getBlock(pos, true);
             if (block != null) {
                 out.set(block.mapColor);
-                // 向下转型 Floor 来获取 liquidDrop
                 if (block instanceof Floor && ((Floor) block).liquidDrop != null) {
                     out.mul(0.7f);
                     out.a = 1.0f;
@@ -105,6 +124,17 @@ public class AntichthonGenerator extends PlanetGenerator {
         if (floor == Blocks.darkPanel6) floor = Blocks.darkPanel3;
         tile.floor = floor.asFloor();
         tile.block = Blocks.air;
+
+        // ===== 墙壁生成 B / C：和黑暗度那套完全并存的第二种、第三种长墙方式 =====
+        // 放在 genTile 里而不是 postGenerate，是为了让后面的“找安全出生点”能绕开这些墙
+        Floor f = floor.asFloor();
+        if (f.liquidDrop == null) {
+            if (AntichthonBlocks.veinWall(pos, SEED + 4101, veinScale, veinThreshold)) {
+                tile.block = AntichthonBlocks.crimsonVeinWall;
+            } else if (AntichthonBlocks.blobWall(pos, SEED + 4207, blobScale, blobThreshold)) {
+                tile.block = AntichthonBlocks.crimsonBloomWall;
+            }
+        }
     }
 
     public Block getBlock(Vec3 pos, boolean visualOnly) {
@@ -150,7 +180,8 @@ public class AntichthonGenerator extends PlanetGenerator {
                     float waterLevel = 0.38f - (absLat / 0.28f) * 0.08f;
 
                     if (height < waterLevel) {
-                        if (height < waterLevel - 0.05f) {
+                        // 浅滩范围加宽：原来是 -0.05，改 -0.09，湖岸有更长的过渡带，不容易一坨深水
+                        if (height < waterLevel - 0.09f) {
                             res = AntichthonBlocks.co2Deep;
                         } else {
                             res = AntichthonBlocks.co2Shallow;
@@ -180,6 +211,41 @@ public class AntichthonGenerator extends PlanetGenerator {
                     float mod2 = (baseDist + 0.01f) % baseFreq2;
                     if (mod2 < baseFreq2 * 0.65f) return Blocks.metalFloor;
                     else return Blocks.darkPanel6;
+                }
+            }
+
+            // ===== 绯红白杆菌生物群系（新增） =====
+            // 独立噪声场，边界再叠一层高频噪声做“蔓延”过渡，避免色块硬切
+            if (res != AntichthonBlocks.co2Deep && res != AntichthonBlocks.co2Shallow) {
+                float crimsonField = Simplex.noise3d(SEED + 9101, 4, 0.55f, 1f / crimsonScale, px, py + 1300f, pz);
+                float crimsonEdge = Simplex.noise3d(SEED + 9102, 3, 0.6f, 1f / 0.45f, px, py + 1700f, pz) * 0.055f;
+
+                if (crimsonField > crimsonThreshold + crimsonEdge && absLat > 0.16f) {
+                    float whiteField = Simplex.noise3d(SEED + 9103, 3, 0.5f, 1f / 0.9f, px, py + 2100f, pz);
+                    res = whiteField > 0.5f ? AntichthonBlocks.whiteStalkCarpet : AntichthonBlocks.crimsonCarpet;
+                }
+            }
+
+            // ===== 镜潮流体湖：低洼处自然形成，湖底 Floor 的 liquidDrop 决定泵抽出的液体 =====
+            float tideLake = Simplex.noise3d(SEED + 7101, 3, 0.52f, 1f / 7f, px, py + 3100f, pz);
+            if (tideLake > 0.64f && height < 0.32f && absLat > 0.17f && absLat < 0.60f
+                    && pos.dst(basePos) > baseRange
+                    && res != AntichthonBlocks.co2Deep && res != AntichthonBlocks.co2Shallow) {
+                float type = Simplex.noise3d(SEED + 7102, 2, 0.5f, 1f / 3f, px, py + 3600f, pz);
+                boolean deep = height < 0.25f;
+
+                if (type < 0.32f) {
+                    res = deep ? AntichthonBlocks.mirrorDeep : AntichthonBlocks.mirrorShallow;
+                } else if (type < 0.40f) {
+                    res = deep ? AntichthonBlocks.lumenDeep : AntichthonBlocks.lumenShallow;
+                } else if (type < 0.47f) {
+                    res = deep ? AntichthonBlocks.phaseDeep : AntichthonBlocks.phaseShallow;
+                } else if (type < 0.54f) {
+                    res = deep ? AntichthonBlocks.voidDeep : AntichthonBlocks.voidShallow;
+                } else if (type < 0.66f) {
+                    res = deep ? AntichthonBlocks.cryoDeep : AntichthonBlocks.cryoShallow;
+                } else {
+                    res = deep ? AntichthonBlocks.moltenDeep : AntichthonBlocks.moltenShallow;
                 }
             }
 
@@ -276,6 +342,13 @@ public class AntichthonGenerator extends PlanetGenerator {
             ores = append(ores, Blocks.oreThorium);
         }
 
+        // ===== 镜潮矿物：接入生成器后才能在自然地图上刷出 =====
+        ores = append(ores, AntichthonBlocks.oreMirrorShard);
+        ores = append(ores, AntichthonBlocks.orePrismCrystal);
+        ores = append(ores, AntichthonBlocks.oreLumenCrystal);
+        ores = append(ores, AntichthonBlocks.oreVoid);
+        ores = append(ores, AntichthonBlocks.oreAbyss);
+
         for (int j = 0; j < h; j++) {
             for (int i = 0; i < w; i++) {
                 Tile tile = tiles.getn(i, j);
@@ -296,6 +369,11 @@ public class AntichthonGenerator extends PlanetGenerator {
             }
         }
 
+        /* ===== 墙壁生成 A：黑暗度（原有逻辑，保留；只做三处外观优化） =====
+           1. 出生点周围留白，不再落地就被墙围死
+           2. 阈值从“有一点暗就起墙”改成可调阈值，避免整图糊成一片墙
+           3. 用噪声扰动阈值，让墙体边缘呈不规则侵蚀状，而不是贴着暗区平铺
+        */
         try {
             for (int x = 0; x < w; x++) {
                 for (int y = 0; y < h; y++) {
@@ -303,6 +381,7 @@ public class AntichthonGenerator extends PlanetGenerator {
                     if (t == null) continue;
                     if (t.block() != Blocks.air) continue;
                     if (t.floor() == null || (t.floor() instanceof Floor && ((Floor) t.floor()).liquidDrop != null)) continue;
+                    if (Mathf.within(x, y, spawnX, spawnY, spawnClearRadius)) continue;
 
                     float maxDark = 0f;
                     for (int dx = -1; dx <= 1; dx++) {
@@ -315,12 +394,41 @@ public class AntichthonGenerator extends PlanetGenerator {
                         }
                     }
 
-                    if (maxDark > 0f) {
-                        Floor f = t.floor();
-                        if (f != null) {
-                            Block wall = f.wall;
-                            if (wall != null && wall != Blocks.air) t.setBlock(wall);
-                        }
+                    if (maxDark <= 0f) continue;
+
+                    float erosion = noise(x, y, 2, 0.6f, 42f, 1f);
+                    float need = darkWallThreshold * (0.7f + erosion * 0.9f);
+                    if (maxDark < need) continue;
+
+                    Floor f = t.floor();
+                    Block wall = f.wall;
+                    if (wall != null && wall != Blocks.air) t.setBlock(wall);
+                }
+            }
+        } catch (Exception ignored) {}
+
+        /* ===== 装饰散布：蘑菇簇 / 石头 / 巨型蘑菇（新增） ===== */
+        try {
+            for (int x = 0; x < w; x++) {
+                for (int y = 0; y < h; y++) {
+                    Tile t = tiles.getn(x, y);
+                    if (t == null || t.block() != Blocks.air) continue;
+                    Floor f = t.floor();
+                    if (f == null || f.liquidDrop != null) continue;
+                    if (Mathf.within(x, y, spawnX, spawnY, 10)) continue;
+
+                    float n = noise(x, y, 3, 0.62f, 28f, 1f);
+                    boolean crimson = f == AntichthonBlocks.crimsonCarpet || f == AntichthonBlocks.whiteStalkCarpet;
+
+                    if (crimson) {
+                        if (n > 0.993f) t.setBlock(AntichthonBlocks.giantMushroom);
+                        else if (n > 0.966f) t.setBlock(AntichthonBlocks.giantMushroomStump);
+                        else if (n > 0.935f) t.setBlock(AntichthonBlocks.crimsonMushroomCluster);
+                        else if (n > 0.905f) t.setBlock(AntichthonBlocks.whiteStalkCluster);
+                    } else if (f == AntichthonBlocks.redRock || f == AntichthonBlocks.hematiteRock
+                            || f == AntichthonBlocks.rustyGravel) {
+                        if (n > 0.945f) t.setBlock(AntichthonBlocks.crimsonRock);
+                        else if (n > 0.915f) t.setBlock(AntichthonBlocks.paleRock);
                     }
                 }
             }
@@ -391,9 +499,7 @@ public class AntichthonGenerator extends PlanetGenerator {
                     Tile t = tiles.getn(tx, ty);
 
                     if (t != null) {
-                        // Stile 只包含 block 和 rotation，没有 team 和 floor、overlay
                         if (stile.block != null && stile.block != Blocks.air) {
-                            // 这里采用默认的中立队伍（Team.derelict）进行放置
                             t.setBlock(stile.block, Team.derelict, stile.rotation);
                             if (t.build != null) {
                                 t.build.rotation = stile.rotation;
