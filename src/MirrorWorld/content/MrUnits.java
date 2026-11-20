@@ -14,6 +14,7 @@ import mindustry.entities.bullet.SapBulletType;
 import mindustry.gen.Groups;
 import mindustry.gen.Sounds;
 import mindustry.gen.Unit;
+import mindustry.gen.UnitEntity;
 import mindustry.type.UnitType;
 import mindustry.type.Weapon;
 
@@ -158,7 +159,7 @@ public class MrUnits {
             boolean enemyNearby = false;
             for(Unit other : Groups.unit){
                 if(other.team != carrier.team && !other.dead &&
-                    Mathf.dst(carrier.x, carrier.y, other.x, other.y) <= detectRange){
+                        Mathf.dst(carrier.x, carrier.y, other.x, other.y) <= detectRange){
                     enemyNearby = true;
                     break;
                 }
@@ -176,9 +177,9 @@ public class MrUnits {
 
             // 从航母尾部稍偏侧方的位置离舰。
             aircraft.x = carrier.x - Mathf.cos(rad) * (carrier.hitSize / 2f + aircraft.hitSize / 2f + 3f)
-                + Mathf.cos(rad + Mathf.PI / 2f) * Mathf.range(5f);
+                    + Mathf.cos(rad + Mathf.PI / 2f) * Mathf.range(5f);
             aircraft.y = carrier.y - Mathf.sin(rad) * (carrier.hitSize / 2f + aircraft.hitSize / 2f + 3f)
-                + Mathf.sin(rad + Mathf.PI / 2f) * Mathf.range(5f);
+                    + Mathf.sin(rad + Mathf.PI / 2f) * Mathf.range(5f);
             aircraft.rotation = angle;
             // 电磁弹射：滑行放出，弹射点留下发射终端式回声
             aircraft.vel.set(Mathf.cos(rad) * launchSpeed, Mathf.sin(rad) * launchSpeed);
@@ -292,6 +293,7 @@ public class MrUnits {
     public static UnitType leviathan, skylift, ark;
 
     public static UnitType nova = new UnitType("nova") {{
+        constructor = UnitEntity::create;
         hitSize = 32f * 4f / 3f;
         health = 1200f;
         speed = 3.5f;
@@ -400,6 +402,7 @@ public class MrUnits {
         loaded = true;
 
         falcon = new UnitType("falcon") {{
+            constructor = UnitEntity::create;
             hitSize = 32f;
             health = 800f;
             speed = 3.2f;
@@ -475,6 +478,7 @@ public class MrUnits {
 
         // 工兵：采矿+速建，只有一把小口径自卫枪
         mite = new UnitType("mite") {{
+            constructor = UnitEntity::create;
             health = 230f;
             speed = 1.95f;
             hitSize = 9f;
@@ -505,6 +509,7 @@ public class MrUnits {
 
         // 爬行者：最便宜的自杀冲锋单位，短射程高频率
         crawler = new UnitType("crawler") {{
+            constructor = UnitEntity::create;
             health = 160f;
             speed = 2.6f;
             hitSize = 8f;
@@ -530,6 +535,7 @@ public class MrUnits {
 
         // 短剑：标准步兵，双联机枪
         dagger = new UnitType("dagger") {{
+            constructor = UnitEntity::create;
             health = 320f;
             speed = 1.75f;
             hitSize = 11f;
@@ -563,6 +569,7 @@ public class MrUnits {
 
         // 铁锤：装甲方块，主炮单发高伤
         mace = new UnitType("mace") {{
+            constructor = UnitEntity::create;
             health = 900f;
             speed = 1.05f;
             hitSize = 16f;
@@ -596,6 +603,7 @@ public class MrUnits {
 
         // 军刀：高速近战突袭，射程极短
         sabre = new UnitType("sabre") {{
+            constructor = UnitEntity::create;
             health = 380f;
             speed = 3.1f;
             hitSize = 10f;
@@ -621,6 +629,7 @@ public class MrUnits {
 
         // 破阵：攻城单位，超长装填，一炮打穿一排
         buster = new UnitType("buster") {{
+            constructor = UnitEntity::create;
             health = 760f;
             speed = 0.92f;
             hitSize = 17f;
@@ -657,6 +666,7 @@ public class MrUnits {
 
         // 修理车：范围回血，几乎无攻击
         mender = new UnitType("mender") {{
+            constructor = UnitEntity::create;
             health = 420f;
             speed = 1.65f;
             hitSize = 12f;
@@ -690,6 +700,7 @@ public class MrUnits {
 
         // 庇护者：重甲，范围内大幅回血，自己的枪很弱
         aegis = new UnitType("aegis") {{
+            constructor = UnitEntity::create;
             health = 1650f;
             speed = 0.95f;
             hitSize = 19f;
@@ -722,6 +733,7 @@ public class MrUnits {
 
         // 特使：支援压制，弹体带减速，伤害很低
         envoy = new UnitType("envoy") {{
+            constructor = UnitEntity::create;
             health = 500f;
             speed = 2.1f;
             hitSize = 12f;
@@ -756,6 +768,7 @@ public class MrUnits {
 
         // 游牧：地面后勤，背货多、挖得快，无武装
         nomad = new UnitType("nomad") {{
+            constructor = UnitEntity::create;
             health = 700f;
             speed = 1.5f;
             hitSize = 14f;
@@ -772,6 +785,7 @@ public class MrUnits {
 
         // 秃鹫：廉价空优
         vulture = new UnitType("vulture") {{
+            constructor = UnitEntity::create;
             health = 360f;
             speed = 3.4f;
             accel = 0.06f;
@@ -816,6 +830,7 @@ public class MrUnits {
 
         // 飞龙：重型空袭，双联激光
         wyvern = new UnitType("wyvern") {{
+            constructor = UnitEntity::create;
             health = 1450f;
             speed = 2.3f;
             accel = 0.05f;
@@ -865,6 +880,7 @@ public class MrUnits {
 
         // 幽影：高速骚扰，单发穿甲
         specter = new UnitType("specter") {{
+            constructor = UnitEntity::create;
             health = 420f;
             speed = 4.6f;
             accel = 0.09f;
@@ -906,6 +922,7 @@ public class MrUnits {
 
         // 货运机：空中后勤，容量最大
         cargo = new UnitType("cargo") {{
+            constructor = UnitEntity::create;
             health = 620f;
             speed = 2.6f;
             accel = 0.05f;
@@ -933,6 +950,7 @@ public class MrUnits {
 
         // 太空战列舰：超大血量，主炮+副炮+导弹，自带跃迁能力（只有有目标才跃迁）
         leviathan = new UnitType("leviathan") {{
+            constructor = UnitEntity::create;
             health = 9000f;
             speed = 1.05f;
             accel = 0.03f;
@@ -1048,6 +1066,7 @@ public class MrUnits {
 
         // 空中航母：定期放秃鹫，近防炮+副激光
         skylift = new UnitType("skylift") {{
+            constructor = UnitEntity::create;
             health = 5200f;
             speed = 1.2f;
             accel = 0.035f;
@@ -1120,6 +1139,7 @@ public class MrUnits {
 
         // 普通航母：地面重甲平台，可连核心；核心被毁后充当核心，打印卫队、储物品、建建筑
         ark = new UnitType("ark") {{
+            constructor = UnitEntity::create;
             health = 6800f;
             speed = 0.75f;
             hitSize = 56f;
