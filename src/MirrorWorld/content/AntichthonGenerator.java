@@ -3,7 +3,12 @@ package MirrorWorld.content;
 import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.math.geom.Vec3;
+import arc.struct.IntSet;
+import arc.struct.ObjectSet;
+import arc.struct.Seq;
 import arc.util.Log;
+import arc.util.Nullable;
+import arc.util.Time;
 import arc.util.noise.Simplex;
 import mindustry.content.Blocks;
 import mindustry.game.Schematic;
@@ -11,6 +16,8 @@ import mindustry.game.Schematic.Stile;
 import mindustry.game.Schematics;
 import mindustry.game.Team;
 import mindustry.maps.generators.PlanetGenerator;
+import mindustry.type.Planet;
+import mindustry.type.Sector;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.TileGen;
@@ -40,8 +47,8 @@ public class AntichthonGenerator extends PlanetGenerator {
 
     /* ================= 新增：外观调参区（想改观感只动这里） ================= */
 
-    /** 墙壁生成 A：黑暗度阈值。0 表示“有一点暗就起墙”，会糊成一片；调高墙更少更成块 */
-    public static final float darkWallThreshold = 0.012f;
+    /** 墙壁生成 A：黑暗度阈值（针对 darkness() 噪声输出 0~1.4 的标度）。调高墙更少更成块 */
+    public static final float darkWallThreshold = 0.58f;
 
     /** 墙壁生成 B：峰脊菌脉。threshold 越大墙脉越细越少（0.88~0.93 比较好看） */
     public static final float veinScale = 52f;
@@ -360,8 +367,8 @@ public class AntichthonGenerator extends PlanetGenerator {
                 for (int oi = ores.length - 1; oi >= 0; oi--) {
                     Block entry = ores[oi];
                     float freq = -0.1f - oi * 0.01f;
-                    if (Math.abs(0.5f - noise(offsetX, offsetY + oi * 999, 2, 0.7f, 40 + oi * 2f, 1f)) > 0.22f + oi * 0.01f &&
-                            Math.abs(0.5f - noise(offsetX, offsetY - oi * 999, 1, 1f, 30 + oi * 4f, 1f)) > 0.37f + freq) {
+                    if (Math.abs(0.5f - noise(offsetX, offsetY + oi * 999, 2, 0.7f, 40 + oi * 2f, 1f)) > 0.32f + oi * 0.01f &&
+                            Math.abs(0.5f - noise(offsetX, offsetY - oi * 999, 1, 1f, 30 + oi * 4f, 1f)) > 0.48f + freq) {
                         tile.setOverlay(entry);
                         break;
                     }
@@ -389,7 +396,7 @@ public class AntichthonGenerator extends PlanetGenerator {
                             if (dx == 0 && dy == 0) continue;
                             int nx = x + dx, ny = y + dy;
                             if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-                            float dark = world.getDarkness(nx, ny);
+                            float dark = darkness(nx, ny);
                             if (dark > maxDark) maxDark = dark;
                         }
                     }
@@ -455,6 +462,14 @@ public class AntichthonGenerator extends PlanetGenerator {
         }
     }
 
+    /** 黑暗度生成：模仿原版生成器，用多层噪声叠加出暗区；值越大越暗，越容易在暗区边缘起墙 */
+    private float darkness(float x, float y) {
+        float base = Math.abs(noise(x, y, 4, 0.55f, 16f, 1f));
+        float detail = Math.abs(noise(x, y, 2, 0.6f, 34f, 1f));
+        float patch = Math.abs(noise(x, y, 3, 0.5f, 8f, 1f));
+        return base * 0.55f + detail * 0.35f + patch * 0.25f;
+    }
+
     private void placeBlueprints(Tiles tiles, int count, int spawnX, int spawnY) {
         if (bp1 == null) return;
         int placed = 0;
@@ -511,5 +526,92 @@ public class AntichthonGenerator extends PlanetGenerator {
                 placed++;
             }
         }
+    }
+
+    /* ================= 发射规则：必须建造核心发射器 ================= */
+
+    private final IntSet launchReach = new IntSet();
+    private Planet launchCachePlanet;
+    private float launchCacheTime = -10000f;
+
+    /**
+     * 星图里哪些区块可以被“发射过去”。
+     * 原版只允许与已占领区块相邻的区块，这里额外允许被发射器射程覆盖的区块。
+     */
+    @Override
+    public boolean allowLanding(Sector sector){
+        if(super.allowLanding(sector)) return true;
+        if(!sector.planet.allowLaunchToNumbered) return false;
+
+        if(launchCachePlanet != sector.planet || Time.time - launchCacheTime > 30f){
+            rebuildLaunchReach(sector.planet);
+        }
+        return launchReach.contains(sector.id);
+    }
+
+    private void rebuildLaunchReach(Planet p){
+        launchCachePlanet = p;
+        launchCacheTime = Time.time;
+        launchReach.clear();
+        if(p == null) return;
+
+        for(Sector src : p.sectors){
+            if(!src.hasBase()) continue;
+
+            CoreLauncher launcher = CoreLaunchers.byLevel(CoreLaunchers.level(src));
+            if(launcher == null) continue;
+
+            Block core = CoreLaunchers.bestCore(src);
+            if(core != null && core.size > launcher.maxCoreSize) continue;
+
+            if(launcher.sectorRange <= 0){
+                for(Sector dest : p.sectors){
+                    if(dest != src) launchReach.add(dest.id);
+                }
+                continue;
+            }
+
+            ObjectSet<Sector> seen = new ObjectSet<>();
+            Seq<Sector> frontier = new Seq<>();
+            seen.add(src);
+            frontier.add(src);
+
+            for(int depth = 1; depth <= launcher.sectorRange; depth++){
+                Seq<Sector> next = new Seq<>();
+                for(Sector s : frontier){
+                    for(Sector n : s.near()){
+                        if(n == null || seen.contains(n)) continue;
+                        seen.add(n);
+                        next.add(n);
+                        launchReach.add(n.id);
+                    }
+                }
+                if(next.isEmpty()) break;
+                frontier = next;
+            }
+        }
+    }
+
+    /** 发射来源：优先当前正在玩的区块，其次找射程内最近的、装有发射器的区块。 */
+    @Override
+    public Sector findLaunchCandidate(Sector destination, @Nullable Sector selected){
+        if(selected != null && selected.planet == destination.planet && CoreLaunchers.canLaunch(selected, destination)){
+            return selected;
+        }
+
+        Sector best = null;
+        float bestDist = Float.MAX_VALUE;
+
+        for(Sector s : destination.planet.sectors){
+            if(s == destination || !s.hasBase()) continue;
+            if(!CoreLaunchers.canLaunch(s, destination)) continue;
+
+            float dist = s.tile.v.dst2(destination.tile.v);
+            if(best == null || dist < bestDist){
+                best = s;
+                bestDist = dist;
+            }
+        }
+        return best;
     }
 }

@@ -29,7 +29,7 @@ public class MirrorSystemPlanets {
         antichthon.localizedName = "Antichthon";
         antichthon.visible = true;
         antichthon.accessible = true;
-        antichthon.alwaysUnlocked = false;
+        antichthon.alwaysUnlocked = true;
         antichthon.bloom = false;
         antichthon.defaultEnv = Env.terrestrial;
 
@@ -41,7 +41,11 @@ public class MirrorSystemPlanets {
         antichthon.startSector = 5;
         antichthon.defaultCore = Blocks.coreShard;
 
-        antichthon.meshLoader = () -> new HexMesh(antichthon, 6);
+        // 行星本体 + 人造星环（赤道环带，MultiMesh 一起渲染）
+        antichthon.meshLoader = () -> new MultiMesh(
+                new HexMesh(antichthon, 6),
+                new RingMesh(antichthon)
+        );
 
         // 云层
         Color baseColor = Color.valueOf("d89070");

@@ -5,9 +5,11 @@ import arc.math.Mathf;
 import arc.util.Time;
 import mindustry.content.Fx;
 import mindustry.content.StatusEffects;
+import mindustry.entities.Units;
 import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.BasicBulletType;
 import mindustry.entities.bullet.LaserBulletType;
+import mindustry.entities.bullet.MissileBulletType;
 import mindustry.entities.bullet.SapBulletType;
 import mindustry.gen.Groups;
 import mindustry.gen.Sounds;
@@ -35,10 +37,11 @@ public class MrUnits {
 
     /* ================= 能力（战列舰跃迁 / 航母放机 / 随行维修） ================= */
 
-    /** 跃迁：每隔一段时间朝当前朝向前移一段距离，起点/终点各一次传送与冲击波特效 */
+    /** 跃迁：只有附近存在敌方目标时才朝目标迁越，避免空图时满地图乱飞 */
     public static class WarpAbility extends Ability {
         public float reload = 60f * 11f;
         public float distance = 220f;
+        public float detectRange = 420f;
         public Color warpColor = Color.valueOf("9fc4e8");
         float counter;
 
@@ -47,6 +50,7 @@ public class MrUnits {
             WarpAbility copy = new WarpAbility();
             copy.reload = reload;
             copy.distance = distance;
+            copy.detectRange = detectRange;
             copy.warpColor = warpColor;
             return copy;
         }
@@ -55,23 +59,33 @@ public class MrUnits {
         public void update(Unit unit){
             counter += Time.delta;
             if(counter < reload) return;
+
+            Unit target = Units.closestEnemy(unit.team, unit.x, unit.y, detectRange, u -> !u.dead);
+            if(target == null){
+                // 无目标时保持蓄满，一旦目标进入侦测范围立刻迁越
+                counter = reload;
+                return;
+            }
+
             counter = 0f;
 
-            float ang = unit.rotation * Mathf.degRad;
-            float nx = unit.x + Mathf.cos(ang) * distance;
-            float ny = unit.y + Mathf.sin(ang) * distance;
+            float ang = Mathf.angle(target.x - unit.x, target.y - unit.y);
+            float d = Math.min(distance, Mathf.dst(unit.x, unit.y, target.x, target.y) - unit.hitSize - target.hitSize - 10f);
+            if(d < 1f) d = 0f;
 
-            // 出发：传送消散 + 冲击波
-            Fx.teleportOut.at(unit.x, unit.y, unit.rotation, warpColor);
-            Fx.bigShockwave.at(unit.x, unit.y);
+            float nx = unit.x + Mathf.cos(ang * Mathf.degRad) * d;
+            float ny = unit.y + Mathf.sin(ang * Mathf.degRad) * d;
+
+            // 出发：镜潮迁越消散
+            MrFx.mirrorWarp.at(unit.x, unit.y, ang, warpColor);
 
             unit.x = nx;
             unit.y = ny;
+            unit.rotation = ang;
             unit.vel.setZero();
 
-            // 到达：传送成形 + 冲击波
-            Fx.teleport.at(nx, ny, unit.rotation, warpColor);
-            Fx.bigShockwave.at(nx, ny);
+            // 到达：镜潮迁越成形
+            MrFx.mirrorWarpIn.at(nx, ny, ang, warpColor);
         }
     }
 
@@ -85,7 +99,7 @@ public class MrUnits {
         public float reload = 60f * 12f;
         public float detectRange = 260f;
         public float launchReload = 18f;
-        public float launchSpeed = 2.4f;
+        public float launchSpeed = 3.6f;
 
         float buildCounter;
         float launchCounter;
@@ -133,8 +147,9 @@ public class MrUnits {
                 aircraft.y = carrier.y;
                 aircraft.rotation = carrier.rotation;
                 hangar.add(aircraft);
+                // “打印单位”：像单位制钞厂一样逐个在甲板上成形
+                MrFx.craftFlash.at(carrier.x, carrier.y);
                 Fx.unitAssemble.at(carrier.x, carrier.y, carrier.rotation, type);
-                Fx.unitPickup.at(carrier.x, carrier.y);
             }
 
             if(hangar.isEmpty()) return;
@@ -165,11 +180,66 @@ public class MrUnits {
             aircraft.y = carrier.y - Mathf.sin(rad) * (carrier.hitSize / 2f + aircraft.hitSize / 2f + 3f)
                 + Mathf.sin(rad + Mathf.PI / 2f) * Mathf.range(5f);
             aircraft.rotation = angle;
+            // 电磁弹射：滑行放出，弹射点留下发射终端式回声
             aircraft.vel.set(Mathf.cos(rad) * launchSpeed, Mathf.sin(rad) * launchSpeed);
+            MrFx.launchEcho.at(carrier.x, carrier.y, angle);
+            MrFx.mirrorWarpIn.at(aircraft.x, aircraft.y, angle);
             Fx.spawn.at(aircraft.x, aircraft.y);
-            Fx.unitDrop.at(aircraft.x, aircraft.y);
-            Fx.landShock.at(aircraft.x, aircraft.y);
             aircraft.add();
+        }
+    }
+
+    /** 航母核心代理：本方核心被摧毁后，航母临时充当核心，逐个打印卫队单位并继续储存物品 */
+    public static class CoreProxyAbility extends Ability {
+        public UnitType guardianType;
+        public float buildTime = 60f * 8f;
+        public int maxGuardians = 3;
+
+        float counter;
+        private static final Map<Integer, ArrayList<Unit>> stored = new HashMap<>();
+
+        public CoreProxyAbility(UnitType guardianType){
+            this.guardianType = guardianType;
+        }
+
+        @Override
+        public Ability copy(){
+            CoreProxyAbility copy = new CoreProxyAbility(guardianType);
+            copy.buildTime = buildTime;
+            copy.maxGuardians = maxGuardians;
+            return copy;
+        }
+
+        @Override
+        public void update(Unit carrier){
+            // 本方仍有存活核心，不代理
+            if(carrier.team.core() != null && !carrier.team.core().dead){
+                counter = 0f;
+                return;
+            }
+
+            ArrayList<Unit> guards = stored.computeIfAbsent(carrier.id, id -> new ArrayList<>());
+            guards.removeIf(u -> u == null || u.dead);
+
+            int active = guards.size();
+            for(Unit other : Groups.unit){
+                if(other.team == carrier.team && other.type == guardianType && !other.dead) active++;
+            }
+
+            if(active >= maxGuardians) return;
+
+            counter += Time.delta;
+            if(counter < buildTime) return;
+            counter = 0f;
+
+            Unit u = guardianType.create(carrier.team);
+            if(u == null) return;
+            u.set(carrier.x + Mathf.range(8f), carrier.y + Mathf.range(8f));
+            guards.add(u);
+            u.add();
+
+            MrFx.summonRift.at(u.x, u.y);
+            Fx.unitAssemble.at(u.x, u.y, 0f, guardianType);
         }
     }
 
@@ -861,21 +931,21 @@ public class MrUnits {
 
         /* ======================= 主力舰 ======================= */
 
-        // 太空战列舰：超大血量，主炮+副炮，自带跃迁能力
+        // 太空战列舰：超大血量，主炮+副炮+导弹，自带跃迁能力（只有有目标才跃迁）
         leviathan = new UnitType("leviathan") {{
-            health = 7800f;
-            speed = 1.15f;
+            health = 9000f;
+            speed = 1.05f;
             accel = 0.03f;
             drag = 0.02f;
             flying = true;
-            rotateSpeed = 1.9f;
-            baseRotateSpeed = 1.9f;
-            hitSize = 42f;
-            armor = 16f;
-            itemCapacity = 200;
+            rotateSpeed = 1.6f;
+            baseRotateSpeed = 1.6f;
+            hitSize = 60f;
+            armor = 18f;
+            itemCapacity = 260;
 
-            engineOffset = 34f;
-            engineSize = 6f;
+            engineOffset = 50f;
+            engineSize = 8f;
             engineColor = Color.valueOf("c8d8e8");
 
             abilities.add(new WarpAbility() {{
@@ -937,6 +1007,38 @@ public class MrUnits {
                 }};
             }});
 
+            weapons.add(new Weapon("leviathan-missiles") {{
+                reload = 90f;
+                x = 4f;
+                y = 8f;
+                mirror = true;
+                rotate = true;
+                baseRotation = 45f;
+                shoot.firstShotDelay = 20f;
+                ejectEffect = Fx.casing2;
+                bullet = new MissileBulletType(3.2f, 85f) {{
+                    width = 9f;
+                    height = 16f;
+                    lifetime = 60f;
+                    homingPower = 0.22f;
+                    homingRange = 90f;
+                    backColor = Color.valueOf("4a5a6a");
+                    frontColor = Color.valueOf("e8f4ff");
+                    trailEffect = MrFx.polyTrail;
+                    trailLength = 14;
+                    trailWidth = 3f;
+                    trailColor = Color.valueOf("c8d8e8");
+                    hitEffect = Fx.hitBulletBig;
+                    despawnEffect = MrFx.polyBurst;
+                    shootEffect = Fx.shootBig;
+                    smokeEffect = Fx.shootBigSmoke2;
+                    splashDamage = 40f;
+                    splashDamageRadius = 32f;
+                    collidesAir = true;
+                    collidesGround = true;
+                }};
+            }});
+
             deathExplosionEffect = Fx.massiveExplosion;
             deathSound = Sounds.explosion;
             trailLength = 60;
@@ -944,21 +1046,21 @@ public class MrUnits {
             alwaysUnlocked = false;
         }};
 
-        // 空中航母：定期放秃鹫，自己带一门近防炮
+        // 空中航母：定期放秃鹫，近防炮+副激光
         skylift = new UnitType("skylift") {{
-            health = 4200f;
-            speed = 1.3f;
+            health = 5200f;
+            speed = 1.2f;
             accel = 0.035f;
             drag = 0.02f;
             flying = true;
-            rotateSpeed = 2.4f;
-            baseRotateSpeed = 2.4f;
-            hitSize = 34f;
-            armor = 10f;
-            itemCapacity = 120;
+            rotateSpeed = 2.0f;
+            baseRotateSpeed = 2.0f;
+            hitSize = 48f;
+            armor = 12f;
+            itemCapacity = 160;
 
-            engineOffset = 26f;
-            engineSize = 5f;
+            engineOffset = 38f;
+            engineSize = 7f;
             engineColor = Color.valueOf("9fc4e8");
 
             abilities.add(new CarrierAbility(vulture) {{
@@ -987,6 +1089,28 @@ public class MrUnits {
                 }};
             }});
 
+            weapons.add(new Weapon("skylift-broadside") {{
+                reload = 30f;
+                x = 2f;
+                y = 10f;
+                mirror = true;
+                rotate = true;
+                baseRotation = -90f;
+                bullet = new LaserBulletType() {{
+                    damage = 34f;
+                    length = 120f;
+                    lifetime = 18f;
+                    colors = new Color[]{
+                            Color.valueOf("3a4a78"),
+                            Color.valueOf("9fc4e8"),
+                            Color.valueOf("ffffff")
+                    };
+                    hitEffect = Fx.hitLaser;
+                    shootEffect = Fx.hitLancer;
+                    smokeEffect = Fx.hitLancer;
+                }};
+            }});
+
             deathExplosionEffect = Fx.titanExplosion;
             deathSound = Sounds.explosion;
             trailLength = 42;
@@ -994,18 +1118,23 @@ public class MrUnits {
             alwaysUnlocked = false;
         }};
 
-        // 普通航母：地面重甲平台，定期放爬行者，靠副炮自卫
+        // 普通航母：地面重甲平台，可连核心；核心被毁后充当核心，打印卫队、储物品、建建筑
         ark = new UnitType("ark") {{
-            health = 5200f;
-            speed = 0.8f;
-            hitSize = 38f;
-            armor = 13f;
-            itemCapacity = 150;
-            buildSpeed = 1.5f;
+            health = 6800f;
+            speed = 0.75f;
+            hitSize = 56f;
+            armor = 15f;
+            itemCapacity = 320;
+            buildSpeed = 2.5f;
 
             abilities.add(new CarrierAbility(crawler) {{
                 max = 6;
                 reload = 60f * 9f;
+            }});
+
+            abilities.add(new CoreProxyAbility(aegis) {{
+                buildTime = 60f * 12f;
+                maxGuardians = 3;
             }});
 
             weapons.add(new Weapon("ark-turret") {{
@@ -1027,6 +1156,35 @@ public class MrUnits {
                     hitEffect = Fx.hitBulletBig;
                     shootEffect = Fx.shootBig;
                     smokeEffect = Fx.shootBigSmoke2;
+                }};
+            }});
+
+            weapons.add(new Weapon("ark-artillery") {{
+                reload = 70f;
+                x = 14f;
+                y = 0f;
+                rotate = true;
+                recoil = 3f;
+                recoilTime = 30f;
+                shoot.firstShotDelay = 20f;
+                bullet = new BasicBulletType(2.8f, 120f) {{
+                    width = 12f;
+                    height = 16f;
+                    lifetime = 70f;
+                    backColor = Color.valueOf("4a0c14");
+                    frontColor = Color.valueOf("ff8a96");
+                    trailEffect = MrFx.polyTrail;
+                    trailLength = 18;
+                    trailWidth = 3.2f;
+                    trailColor = Color.valueOf("ff8a96");
+                    hitEffect = MrFx.polyBurst;
+                    despawnEffect = MrFx.polyBurst;
+                    shootEffect = Fx.shootBig;
+                    smokeEffect = Fx.shootBigSmoke2;
+                    splashDamage = 50f;
+                    splashDamageRadius = 40f;
+                    collidesAir = true;
+                    collidesGround = true;
                 }};
             }});
 

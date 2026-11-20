@@ -2,6 +2,7 @@ package MirrorWorld;
 
 import MirrorWorld.content.AntichthonBlocks;
 import MirrorWorld.content.AntichthonGenerator;
+import MirrorWorld.content.CoreLaunchers;
 import MirrorWorld.content.MrBlocks;
 import MirrorWorld.content.MrTechTree;
 import MirrorWorld.content.MrUnits;
@@ -46,6 +47,7 @@ public class MirrorWorld extends Mod {
         Events.on(ClientLoadEvent.class, e -> {
             createLinearFilterToggle();
             setupSettings();
+            CoreLaunchers.install();
             if (Core.settings.getBool(SETTING_SHOW_LAUNCHER, true)) {
                 Time.runTask(10f, this::showLauncherDialog);
             }

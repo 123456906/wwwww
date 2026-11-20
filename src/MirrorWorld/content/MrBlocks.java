@@ -5,10 +5,17 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.scene.ui.Button;
+import arc.scene.ui.ButtonGroup;
+import arc.scene.ui.TextButton;
+import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Time;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.content.*;
+import mindustry.entities.Effect;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.*;
 import mindustry.entities.effect.MultiEffect;
@@ -17,10 +24,12 @@ import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.type.Category;
+import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.LiquidStack;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
+import mindustry.world.Tile;
 import mindustry.world.blocks.defense.*;
 import mindustry.world.blocks.defense.turrets.*;
 import mindustry.world.blocks.distribution.*;
@@ -31,6 +40,8 @@ import mindustry.world.blocks.storage.*;
 import mindustry.world.blocks.units.*;
 import mindustry.world.consumers.ConsumeItemFlammable;
 import mindustry.world.draw.*;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatValue;
 
 import static MirrorWorld.content.MrItems.*;
 import static MirrorWorld.content.MrUnits.falcon;
@@ -91,6 +102,7 @@ public class MrBlocks {
     /* ================= 制造 ================= */
     public static Block shardKiln, facetPress, prismSmelter, crystalCrucible, mirrorFoundry,
             alloyForge, veilWeaver, facetMixer, pyraMixer, cryoMixer, facetSeparator;
+    public static Block echoFabricator;
 
     /* ================= 流体生产工厂 ================= */
     public static Block mirrorStill, lumenLeach, voidRefinery, mirrorMelter,
@@ -101,6 +113,7 @@ public class MrBlocks {
 
     /* ================= 效果 ================= */
     public static Block veilNode, haloProjector, auroraDome, mirrorShield, shardMine;
+    public static Block terraformer;
 
     /* ================= 炮塔 ================= */
     public static Block glintTurret, shardScatter, facetLancer, mirageArc, echoRipple,
@@ -916,6 +929,34 @@ public class MrBlocks {
         }};
 
         /* ============================================================
+         *  多配方工厂：点击方块在配方间切换，介绍页列出全部配方与制作时间
+         * ============================================================ */
+        echoFabricator = new Fabricator("echo-fabricator") {{
+            requirements(Category.crafting, ItemStack.with(facetPlate, 120, prismCrystal, 80, echoChip, 40));
+            size = 3;
+            scaledHealth = 150;
+            itemCapacity = 40;
+
+            recipes = new Recipe[]{
+                    new Recipe(
+                            ItemStack.with(facetPlate, 2, prismCrystal, 1),
+                            new ItemStack(prismLens, 1),
+                            60f
+                    ),
+                    new Recipe(
+                            ItemStack.with(prismLens, 1, lumenThread, 2),
+                            new ItemStack(echoChip, 1),
+                            90f
+                    ),
+                    new Recipe(
+                            ItemStack.with(mirrorAlloy, 2, phaseGlass, 1),
+                            new ItemStack(veilFiber, 1),
+                            120f
+                    )
+            };
+        }};
+
+        /* ============================================================
          *  存储
          * ============================================================ */
         echoContainer = new StorageBlock("echo-container") {{
@@ -999,6 +1040,33 @@ public class MrBlocks {
             tileDamage = 8f;
             length = 12;
             tendrils = 5;
+        }};
+
+        /* ============================================================
+         *  地形改造器：消耗物品，把范围内会扣血的菌丝地板/墙体换成安全方块
+         * ============================================================ */
+        terraformer = new Terraformer("terraformer") {{
+            requirements(Category.effect, ItemStack.with(facetPlate, 80, prismCrystal, 40, lumenCrystal, 20));
+            size = 2;
+            scaledHealth = 120;
+            itemCapacity = 10;
+
+            useItem = facetPlate;
+            itemsPerUse = 1;
+            useTime = 120f;
+            range = 3;
+            replaceFloor = AntichthonBlocks.redSand;
+
+            targetFloors.add(
+                    AntichthonBlocks.crimsonCarpet,
+                    AntichthonBlocks.whiteStalkCarpet
+            );
+            targetWalls.add(
+                    AntichthonBlocks.crimsonCarpetWall,
+                    AntichthonBlocks.whiteStalkCarpetWall,
+                    AntichthonBlocks.crimsonVeinWall,
+                    AntichthonBlocks.crimsonBloomWall
+            );
         }};
 
         /* ============================================================
@@ -1463,6 +1531,11 @@ public class MrBlocks {
             );
         }};
 
+        /* ============================================================
+         *  核心发射器：建成后才允许把核心发射到其他区块
+         * ============================================================ */
+        CoreLauncher.loadContent();
+
     } // load()
 
     /* ================================================================
@@ -1637,15 +1710,13 @@ public class MrBlocks {
 
                 if (damageAccumulated >= summonThreshold) {
                     if (falcon != null) {
-                        for (int i = 0; i < 8; i++) {
-                            Fx.spawn.at(x + Mathf.random(-30f, 30f), y + Mathf.random(-30f, 30f));
-                        }
+                        MrFx.summonRift.at(x, y);
                         Fx.flakExplosion.at(x, y);
-                        Fx.shockwave.at(x, y, 40f, Color.valueOf("ffcc88"));
                         Unit unit = falcon.create(team);
                         unit.set(x, y);
                         unit.add();
-                        Fx.spawn.at(unit);
+                        MrFx.mirrorWarpIn.at(x, y);
+                        Fx.unitAssemble.at(x, y, 0f, falcon);
                         Sounds.explosion.at(x, y);
                     }
                     damageAccumulated = 0f;
@@ -1803,9 +1874,8 @@ public class MrBlocks {
 
                             guardian = spawned;
 
-                            Fx.spawn.at(spawned.x, spawned.y);
+                            MrFx.summonRift.at(spawned.x, spawned.y, rotation);
                             Fx.unitAssemble.at(spawned.x, spawned.y, rotation, type);
-                            Fx.landShock.at(spawned.x, spawned.y);
                         }
                     }
                 } else if (guardian != null) {
@@ -1887,6 +1957,219 @@ public class MrBlocks {
                     Lines.stroke(1.4f, Color.white.cpy().a(0.6f));
                     Lines.arc(x, y, block.size * 4f + 5f, p, 0f);
                 }
+            }
+        }
+    }
+
+    /* ============================================================
+     *  多配方工厂：一套方块内含多套配方，点击方块在配方间切换
+     * ============================================================ */
+    public static class Fabricator extends Block {
+        public Recipe[] recipes = {};
+        public Effect craftEffect = MrFx.craftFlash;
+
+        public Fabricator(String name){
+            super(name);
+            update = true;
+            solid = true;
+            hasItems = true;
+            configurable = true;
+            saveConfig = true;
+            itemCapacity = 40;
+
+            config(Integer.class, (FabricatorBuild b, Integer i) -> {
+                if(i != null) b.recipeIndex = i;
+            });
+        }
+
+        public static class Recipe {
+            public final ItemStack[] input;
+            public final ItemStack output;
+            public final float craftTime;
+
+            public Recipe(ItemStack[] input, ItemStack output, float craftTime){
+                this.input = input;
+                this.output = output;
+                this.craftTime = craftTime;
+            }
+        }
+
+        @Override
+        public void setStats(){
+            super.setStats();
+
+            stats.add(Stat.output, (StatValue) table -> {
+                table.defaults().left().padTop(4f).growX();
+                for(Recipe r : recipes){
+                    Table row = new Table();
+
+                    for(ItemStack s : r.input){
+                        row.image(s.item.fullIcon).size(22f).padRight(2f);
+                        row.add(s.amount + "x").left().color(Color.lightGray).padRight(6f);
+                    }
+
+                    row.add("->").left().color(Color.gray).padLeft(2f).padRight(6f);
+
+                    row.image(r.output.item.fullIcon).size(22f).padRight(2f);
+                    row.add(r.output.amount + "x " + r.output.item.localizedName).left();
+                    row.add("(" + (int)r.craftTime + "s)").left().color(Color.gray).padLeft(6f);
+
+                    table.add(row).growX().row();
+                }
+            });
+        }
+
+        public class FabricatorBuild extends Building {
+            public int recipeIndex = -1;
+            public float progress = 0f;
+
+            public Recipe recipe(){
+                return recipeIndex >= 0 && recipeIndex < recipes.length ? recipes[recipeIndex] : null;
+            }
+
+            @Override
+            public void updateTile(){
+                Recipe r = recipe();
+                if(r == null) return;
+
+                boolean hasInputs = true;
+                for(ItemStack s : r.input){
+                    if(items.get(s.item) < s.amount){
+                        hasInputs = false;
+                        break;
+                    }
+                }
+
+                boolean canCraft = hasInputs && items.get(r.output.item) < itemCapacity;
+
+                if(canCraft){
+                    progress += edelta() / r.craftTime;
+                }else{
+                    progress = Math.max(0f, progress - Time.delta / r.craftTime);
+                }
+
+                if(progress >= 1f){
+                    for(ItemStack s : r.input){
+                        items.remove(s.item, s.amount);
+                    }
+                    progress = 0f;
+
+                    for(int i = 0; i < r.output.amount; i++){
+                        offload(r.output.item);
+                    }
+
+                    if(wasVisible){
+                        craftEffect.at(x, y);
+                    }
+                }
+            }
+
+            @Override
+            public boolean acceptItem(Building source, Item item){
+                return items.get(item) < itemCapacity;
+            }
+
+            @Override
+            public void buildConfiguration(Table table){
+                ButtonGroup<TextButton> group = new ButtonGroup<>();
+                group.setMinCheckCount(0);
+
+                for(int i = 0; i < recipes.length; i++){
+                    Recipe r = recipes[i];
+                    int idx = i;
+
+                    TextButton b = new TextButton(r.output.item.localizedName);
+                    b.changed(() -> configure(b.isChecked() ? idx : -1));
+                    group.add(b);
+                    table.add(b).size(190f, 46f).pad(4f).left().row();
+                }
+            }
+
+            @Override
+            public Integer config(){
+                return recipeIndex;
+            }
+
+            @Override
+            public void write(Writes write){
+                super.write(write);
+                write.i(recipeIndex);
+            }
+
+            @Override
+            public void read(Reads read, byte revision){
+                super.read(read, revision);
+                recipeIndex = read.i();
+            }
+        }
+    }
+
+    /* ============================================================
+     *  地形改造器：消耗物品，把范围内会扣血的菌丝地板/墙体换成安全方块
+     * ============================================================ */
+    public static class Terraformer extends Block {
+        public Item useItem;
+        public int itemsPerUse = 1;
+        public float useTime = 120f;
+        public int range = 3;
+        public Block replaceFloor;
+        public Seq<Block> targetFloors = new Seq<>();
+        public Seq<Block> targetWalls = new Seq<>();
+
+        public Terraformer(String name){
+            super(name);
+            update = true;
+            solid = true;
+            hasItems = true;
+            itemCapacity = 10;
+        }
+
+        public class TerraformerBuild extends Building {
+            public float timer = 0f;
+
+            @Override
+            public boolean acceptItem(Building source, Item item){
+                return item == useItem && items.get(item) < itemCapacity;
+            }
+
+            @Override
+            public void updateTile(){
+                if(useItem == null || items.get(useItem) < itemsPerUse) return;
+
+                timer += edelta();
+                if(timer < useTime) return;
+                timer = 0f;
+
+                boolean did = false;
+                for(int dx = -range; dx <= range; dx++){
+                    for(int dy = -range; dy <= range; dy++){
+                        Tile t = world.tile(tileX() + dx, tileY() + dy);
+                        if(t == null || t.build != null) continue;
+
+                        if(targetWalls.contains(t.block()) && t.block() != Blocks.air){
+                            t.removeNet();
+                            did = true;
+                        }else if(targetFloors.contains(t.floor())){
+                            t.setFloorNet(replaceFloor, Blocks.air);
+                            did = true;
+                        }
+                    }
+                }
+
+                if(did){
+                    items.remove(useItem, itemsPerUse);
+                    MrFx.terraform.at(x, y);
+                }
+            }
+
+            @Override
+            public void drawSelect(){
+                super.drawSelect();
+                Drawf.dashCircle(x, y, range * 8f, Color.valueOf("9fc4e8"));
+
+                float p = useTime > 0f ? Mathf.clamp(timer / useTime) : 0f;
+                Lines.stroke(3f, Color.valueOf("9fc4e8"));
+                Lines.arc(x, y, block.size * 4f + 3f, p, 0f);
             }
         }
     }

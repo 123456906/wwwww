@@ -32,6 +32,15 @@ public class MrTechTree {
             TechTree.node(assimilator, with(facetPlate, 800, prismCrystal, 600, echoChip, 200), () -> {});
             TechTree.node(summonTurret, with(mirrorShard, 600, facetPlate, 400, prismCrystal, 300), () -> {});
 
+            /* ================= 核心发射器 ================= */
+            TechTree.node(CoreLauncher.small, with(mirrorShard, 300, facetPlate, 200), () -> {
+                TechTree.node(CoreLauncher.medium, with(facetPlate, 700, prismCrystal, 500, echoChip, 150), () -> {
+                    TechTree.node(CoreLauncher.large, with(prismCrystal, 1200, mirrorAlloy, 800, phaseGlass, 400), () -> {
+                        TechTree.node(CoreLauncher.finalLauncher, with(voidOre, 1400, abyssCore, 500, resonantAlloy, 800), () -> {});
+                    });
+                });
+            });
+
             /* ================= 防御 ================= */
             TechTree.node(shardWall, with(mirrorShard, 60), () -> {
                 TechTree.node(shardWallLarge, with(mirrorShard, 300), () -> {});
@@ -103,6 +112,7 @@ public class MrTechTree {
                     TechTree.node(cryoMixer, with(lumenCrystal, 300), () -> {});
                     TechTree.node(facetMixer, with(prismCrystal, 500, lumenCrystal, 400, facetPlate, 300), () -> {});
                     TechTree.node(facetSeparator, with(echoChip, 300, mirrorAlloy, 200), () -> {});
+                    TechTree.node(echoFabricator, with(echoChip, 400, mirrorAlloy, 300, phaseGlass, 200), () -> {});
 
                     TechTree.node(alloyForge, with(facetPlate, 800, prismCrystal, 600, lumenCrystal, 400, phaseGlass, 200), () -> {
                         TechTree.node(veilWeaver, with(mirrorAlloy, 500, lumenCrystal, 400, phaseGlass, 300, prismLens, 200), () -> {});
@@ -131,6 +141,7 @@ public class MrTechTree {
             TechTree.node(auroraDome, with(phaseGlass, 300, echoChip, 200), () -> {});
             TechTree.node(mirrorShield, with(mirrorAlloy, 400, veilFiber, 200), () -> {});
             TechTree.node(shardMine, with(mirrorShard, 100, prismCrystal, 80), () -> {});
+            TechTree.node(terraformer, with(facetPlate, 200, prismCrystal, 150), () -> {});
 
             /* ================= 炮塔 ================= */
             TechTree.node(glintTurret, with(mirrorShard, 200), () -> {
