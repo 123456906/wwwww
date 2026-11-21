@@ -46,6 +46,7 @@ public class MirrorSystemPlanets {
                 new HexMesh(antichthon, 6),
                 new RingMesh(antichthon)
         );
+        antichthon.meshLoader = () -> new HexMesh(antichthon, 6);
 
         // 云层
         Color baseColor = Color.valueOf("d89070");
