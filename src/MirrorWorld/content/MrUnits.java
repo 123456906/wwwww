@@ -11,16 +11,24 @@ import mindustry.entities.bullet.BasicBulletType;
 import mindustry.entities.bullet.LaserBulletType;
 import mindustry.entities.bullet.MissileBulletType;
 import mindustry.entities.bullet.SapBulletType;
+import mindustry.gen.Building;
+import mindustry.gen.CrawlUnit;
 import mindustry.gen.Groups;
+import mindustry.gen.MechUnit;
 import mindustry.gen.Sounds;
 import mindustry.gen.Unit;
 import mindustry.gen.UnitEntity;
+import mindustry.gen.UnitWaterMove;
 import mindustry.type.UnitType;
 import mindustry.type.Weapon;
+import mindustry.world.Block;
+import mindustry.world.Tile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import static mindustry.Vars.*;
 
 /**
  * 反地球单位表。
@@ -40,9 +48,9 @@ public class MrUnits {
 
     /** 跃迁：只有附近存在敌方目标时才朝目标迁越，避免空图时满地图乱飞 */
     public static class WarpAbility extends Ability {
-        public float reload = 60f * 11f;
-        public float distance = 220f;
-        public float detectRange = 420f;
+        public float reload = 60f * 9f;
+        public float distance = 260f;
+        public float detectRange = 760f;
         public Color warpColor = Color.valueOf("9fc4e8");
         float counter;
 
@@ -62,20 +70,42 @@ public class MrUnits {
             if(counter < reload) return;
 
             Unit target = Units.closestEnemy(unit.team, unit.x, unit.y, detectRange, u -> !u.dead);
-            if(target == null){
-                // 无目标时保持蓄满，一旦目标进入侦测范围立刻迁越
-                counter = reload;
-                return;
+            float tx, ty;
+
+            if(target != null){
+                tx = target.x;
+                ty = target.y;
+            }else{
+                // 没有敌方单位时，把敌方建筑也当作迁越目标；否则打基地时永远不会起跳
+                Building best = null;
+                float bestD = detectRange;
+                for(Building b : Groups.build){
+                    if(b.team == unit.team || b.dead || b.block == null) continue;
+                    float d = Mathf.dst(unit.x, unit.y, b.x, b.y);
+                    if(d <= bestD){
+                        bestD = d;
+                        best = b;
+                    }
+                }
+
+                if(best == null){
+                    // 无目标时保持蓄满，一旦目标进入侦测范围立刻迁越
+                    counter = reload;
+                    return;
+                }
+
+                tx = best.x;
+                ty = best.y;
             }
 
             counter = 0f;
 
-            float ang = Mathf.angle(target.x - unit.x, target.y - unit.y);
-            float d = Math.min(distance, Mathf.dst(unit.x, unit.y, target.x, target.y) - unit.hitSize - target.hitSize - 10f);
+            float ang = Mathf.angle(tx - unit.x, ty - unit.y);
+            float d = Math.min(distance, Mathf.dst(unit.x, unit.y, tx, ty) - unit.hitSize - 10f);
             if(d < 1f) d = 0f;
 
-            float nx = unit.x + Mathf.cos(ang * Mathf.degRad) * d;
-            float ny = unit.y + Mathf.sin(ang * Mathf.degRad) * d;
+            float nx = unit.x + Mathf.cosDeg(ang) * d;
+            float ny = unit.y + Mathf.sinDeg(ang) * d;
 
             // 出发：镜潮迁越消散
             MrFx.mirrorWarp.at(unit.x, unit.y, ang, warpColor);
@@ -148,9 +178,9 @@ public class MrUnits {
                 aircraft.y = carrier.y;
                 aircraft.rotation = carrier.rotation;
                 hangar.add(aircraft);
-                // “打印单位”：像单位制钞厂一样逐个在甲板上成形
+                // “打印单位”：像单位制钞厂一样逐个在甲板上成形（几何扫描，不用圆形）
                 MrFx.craftFlash.at(carrier.x, carrier.y);
-                Fx.unitAssemble.at(carrier.x, carrier.y, carrier.rotation, type);
+                MrFx.unitPrint.at(carrier.x, carrier.y, carrier.rotation, type);
             }
 
             if(hangar.isEmpty()) return;
@@ -183,20 +213,24 @@ public class MrUnits {
             aircraft.rotation = angle;
             // 电磁弹射：滑行放出，弹射点留下发射终端式回声
             aircraft.vel.set(Mathf.cos(rad) * launchSpeed, Mathf.sin(rad) * launchSpeed);
-            MrFx.launchEcho.at(carrier.x, carrier.y, angle);
+            MrFx.catapult.at(carrier.x, carrier.y, angle);
             MrFx.mirrorWarpIn.at(aircraft.x, aircraft.y, angle);
-            Fx.spawn.at(aircraft.x, aircraft.y);
+            MrFx.polyBurst.at(aircraft.x, aircraft.y);
             aircraft.add();
         }
     }
 
-    /** 航母核心代理：本方核心被摧毁后，航母临时充当核心，逐个打印卫队单位并继续储存物品 */
+    /** 航母核心代理：本方核心被摧毁后，航母先部署一个可部署核心舱，再打印卫队继续防守 */
     public static class CoreProxyAbility extends Ability {
         public UnitType guardianType;
         public float buildTime = 60f * 8f;
         public int maxGuardians = 3;
+        /** 部署核心舱的间隔，避免落地失败时每帧重试 */
+        public float deployInterval = 60f * 4f;
 
         float counter;
+        float deployCounter;
+        Block coreBlock;
         private static final Map<Integer, ArrayList<Unit>> stored = new HashMap<>();
 
         public CoreProxyAbility(UnitType guardianType){
@@ -208,7 +242,19 @@ public class MrUnits {
             CoreProxyAbility copy = new CoreProxyAbility(guardianType);
             copy.buildTime = buildTime;
             copy.maxGuardians = maxGuardians;
+            copy.deployInterval = deployInterval;
             return copy;
+        }
+
+        /** 延迟按名字解析核心舱方块，避免 MrUnits / MrBlocks 加载顺序问题 */
+        Block resolveCoreBlock(){
+            if(coreBlock != null) return coreBlock;
+            for(Block b : content.blocks()){
+                if(b.name.equals("ark-core") || b.name.endsWith("-ark-core")){
+                    return coreBlock = b;
+                }
+            }
+            return null;
         }
 
         @Override
@@ -217,6 +263,21 @@ public class MrUnits {
             if(carrier.team.core() != null && !carrier.team.core().dead){
                 counter = 0f;
                 return;
+            }
+
+            // 核心被毁：在航母脚下部署一个可部署核心舱，提供真实的物品存储与建造范围
+            if(!net.client()){
+                deployCounter += Time.delta;
+                if(deployCounter >= deployInterval){
+                    deployCounter = 0f;
+                    Block core = resolveCoreBlock();
+                    Tile tile = core == null ? null : world.tileWorld(carrier.x, carrier.y);
+                    if(core != null && tile != null && tile.build == null){
+                        tile.setNet(core, carrier.team, 0);
+                        MrFx.summonRift.at(carrier.x, carrier.y);
+                        MrFx.polyBurst.at(carrier.x, carrier.y);
+                    }
+                }
             }
 
             ArrayList<Unit> guards = stored.computeIfAbsent(carrier.id, id -> new ArrayList<>());
@@ -240,7 +301,7 @@ public class MrUnits {
             u.add();
 
             MrFx.summonRift.at(u.x, u.y);
-            Fx.unitAssemble.at(u.x, u.y, 0f, guardianType);
+            MrFx.unitPrint.at(u.x, u.y, 0f, guardianType);
         }
     }
 
@@ -312,7 +373,7 @@ public class MrUnits {
         engineSize = 4.5f;
         engineColor = Color.valueOf("ffffff");
 
-        weapons.add(new Weapon("nova-blaster") {{
+        weapons.add(new Weapon("mirrorworld-nova-blaster") {{
             reload = 10;
             ejectEffect = Fx.casing1;
             bullet = new BasicBulletType() {{
@@ -339,7 +400,7 @@ public class MrUnits {
             shootSound = Sounds.unitExplode2;
         }});
 
-        weapons.add(new Weapon("nova-laser") {{
+        weapons.add(new Weapon("mirrorworld-nova-laser") {{
             reload = 30;
             bullet = new LaserBulletType() {{
                 damage = 55;
@@ -361,7 +422,7 @@ public class MrUnits {
             shootSound = Sounds.shootLaser;
         }});
 
-        weapons.add(new Weapon("nova-sap") {{
+        weapons.add(new Weapon("mirrorworld-nova-sap") {{
             bullet = new SapBulletType() {{
                 lifetime = 35f;
                 damage = 20f;
@@ -421,7 +482,7 @@ public class MrUnits {
             engineSize = 3.5f;
             engineColor = Color.valueOf("8866ff");
 
-            weapons.add(new Weapon("falcon-blaster") {{
+            weapons.add(new Weapon("mirrorworld-falcon-blaster") {{
                 reload = 10;
                 bullet = new BasicBulletType() {{
                     damage = 25;
@@ -444,7 +505,7 @@ public class MrUnits {
                 shootSound = Sounds.unitExplode2;
             }});
 
-            weapons.add(new Weapon("falcon-laser") {{
+            weapons.add(new Weapon("mirrorworld-falcon-laser") {{
                 reload = 30;
                 bullet = new LaserBulletType() {{
                     damage = 40;
@@ -478,7 +539,7 @@ public class MrUnits {
 
         // 工兵：采矿+速建，只有一把小口径自卫枪
         mite = new UnitType("mite") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 230f;
             speed = 1.95f;
             hitSize = 9f;
@@ -488,7 +549,7 @@ public class MrUnits {
             buildSpeed = 1.6f;
             itemCapacity = 30;
 
-            weapons.add(new Weapon("mite-gun") {{
+            weapons.add(new Weapon("mirrorworld-mite-gun") {{
                 reload = 22f;
                 x = 4f;
                 y = 2f;
@@ -509,13 +570,13 @@ public class MrUnits {
 
         // 爬行者：最便宜的自杀冲锋单位，短射程高频率
         crawler = new UnitType("crawler") {{
-            constructor = UnitEntity::create;
+            constructor = CrawlUnit::create;
             health = 160f;
             speed = 2.6f;
             hitSize = 8f;
             armor = 0f;
 
-            weapons.add(new Weapon("crawler-claw") {{
+            weapons.add(new Weapon("mirrorworld-crawler-claw") {{
                 reload = 9f;
                 x = 3f;
                 y = 0f;
@@ -535,13 +596,13 @@ public class MrUnits {
 
         // 短剑：标准步兵，双联机枪
         dagger = new UnitType("dagger") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 320f;
             speed = 1.75f;
             hitSize = 11f;
             armor = 2f;
 
-            weapons.add(new Weapon("dagger-gun") {{
+            weapons.add(new Weapon("mirrorworld-dagger-gun") {{
                 reload = 12f;
                 x = 5f;
                 y = 3f;
@@ -569,13 +630,13 @@ public class MrUnits {
 
         // 铁锤：装甲方块，主炮单发高伤
         mace = new UnitType("mace") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 900f;
             speed = 1.05f;
             hitSize = 16f;
             armor = 6f;
 
-            weapons.add(new Weapon("mace-cannon") {{
+            weapons.add(new Weapon("mirrorworld-mace-cannon") {{
                 reload = 46f;
                 x = 7f;
                 y = 0f;
@@ -603,13 +664,13 @@ public class MrUnits {
 
         // 军刀：高速近战突袭，射程极短
         sabre = new UnitType("sabre") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 380f;
             speed = 3.1f;
             hitSize = 10f;
             armor = 1f;
 
-            weapons.add(new Weapon("sabre-blade") {{
+            weapons.add(new Weapon("mirrorworld-sabre-blade") {{
                 reload = 7f;
                 x = 4f;
                 y = 0f;
@@ -629,13 +690,13 @@ public class MrUnits {
 
         // 破阵：攻城单位，超长装填，一炮打穿一排
         buster = new UnitType("buster") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 760f;
             speed = 0.92f;
             hitSize = 17f;
             armor = 5f;
 
-            weapons.add(new Weapon("buster-siege") {{
+            weapons.add(new Weapon("mirrorworld-buster-siege") {{
                 reload = 92f;
                 x = 8f;
                 y = 0f;
@@ -666,7 +727,7 @@ public class MrUnits {
 
         // 修理车：范围回血，几乎无攻击
         mender = new UnitType("mender") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 420f;
             speed = 1.65f;
             hitSize = 12f;
@@ -680,7 +741,7 @@ public class MrUnits {
                 range = 84f;
             }});
 
-            weapons.add(new Weapon("mender-tool") {{
+            weapons.add(new Weapon("mirrorworld-mender-tool") {{
                 reload = 40f;
                 x = 4f;
                 y = 0f;
@@ -700,7 +761,7 @@ public class MrUnits {
 
         // 庇护者：重甲，范围内大幅回血，自己的枪很弱
         aegis = new UnitType("aegis") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 1650f;
             speed = 0.95f;
             hitSize = 19f;
@@ -712,7 +773,7 @@ public class MrUnits {
                 range = 110f;
             }});
 
-            weapons.add(new Weapon("aegis-gun") {{
+            weapons.add(new Weapon("mirrorworld-aegis-gun") {{
                 reload = 30f;
                 x = 7f;
                 y = 0f;
@@ -733,13 +794,13 @@ public class MrUnits {
 
         // 特使：支援压制，弹体带减速，伤害很低
         envoy = new UnitType("envoy") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 500f;
             speed = 2.1f;
             hitSize = 12f;
             armor = 3f;
 
-            weapons.add(new Weapon("envoy-suppress") {{
+            weapons.add(new Weapon("mirrorworld-envoy-suppress") {{
                 reload = 26f;
                 x = 5f;
                 y = 2f;
@@ -768,7 +829,7 @@ public class MrUnits {
 
         // 游牧：地面后勤，背货多、挖得快，无武装
         nomad = new UnitType("nomad") {{
-            constructor = UnitEntity::create;
+            constructor = MechUnit::create;
             health = 700f;
             speed = 1.5f;
             hitSize = 14f;
@@ -801,7 +862,7 @@ public class MrUnits {
             engineSize = 2.4f;
             engineColor = Color.valueOf("bb99ff");
 
-            weapons.add(new Weapon("vulture-gun") {{
+            weapons.add(new Weapon("mirrorworld-vulture-gun") {{
                 reload = 11f;
                 x = 5f;
                 y = 0f;
@@ -845,7 +906,7 @@ public class MrUnits {
             engineSize = 3.6f;
             engineColor = Color.valueOf("ff8a96");
 
-            weapons.add(new Weapon("wyvern-laser") {{
+            weapons.add(new Weapon("mirrorworld-wyvern-laser") {{
                 reload = 34f;
                 x = 8f;
                 y = 5f;
@@ -895,7 +956,7 @@ public class MrUnits {
             engineSize = 2f;
             engineColor = Color.valueOf("a8c8ff");
 
-            weapons.add(new Weapon("specter-shot") {{
+            weapons.add(new Weapon("mirrorworld-specter-shot") {{
                 reload = 28f;
                 x = 5f;
                 y = 0f;
@@ -951,27 +1012,28 @@ public class MrUnits {
         // 太空战列舰：超大血量，主炮+副炮+导弹，自带跃迁能力（只有有目标才跃迁）
         leviathan = new UnitType("leviathan") {{
             constructor = UnitEntity::create;
-            health = 9000f;
+            health = 14000f;
             speed = 1.05f;
             accel = 0.03f;
             drag = 0.02f;
             flying = true;
             rotateSpeed = 1.6f;
             baseRotateSpeed = 1.6f;
-            hitSize = 60f;
+            hitSize = 96f;
             armor = 18f;
             itemCapacity = 260;
 
-            engineOffset = 50f;
-            engineSize = 8f;
+            engineOffset = 78f;
+            engineSize = 13f;
             engineColor = Color.valueOf("c8d8e8");
 
             abilities.add(new WarpAbility() {{
-                reload = 60f * 11f;
-                distance = 220f;
+                reload = 60f * 9f;
+                distance = 260f;
+                detectRange = 760f;
             }});
 
-            weapons.add(new Weapon("leviathan-main") {{
+            weapons.add(new Weapon("mirrorworld-leviathan-main") {{
                 reload = 55f;
                 x = 16f;
                 y = 0f;
@@ -1000,7 +1062,7 @@ public class MrUnits {
                 }};
             }});
 
-            weapons.add(new Weapon("leviathan-broadside") {{
+            weapons.add(new Weapon("mirrorworld-leviathan-broadside") {{
                 reload = 22f;
                 x = 2f;
                 y = 14f;
@@ -1025,7 +1087,7 @@ public class MrUnits {
                 }};
             }});
 
-            weapons.add(new Weapon("leviathan-missiles") {{
+            weapons.add(new Weapon("mirrorworld-leviathan-missiles") {{
                 reload = 90f;
                 x = 4f;
                 y = 8f;
@@ -1057,6 +1119,28 @@ public class MrUnits {
                 }};
             }});
 
+            weapons.add(new Weapon("mirrorworld-leviathan-flak") {{
+                reload = 14f;
+                x = 8f;
+                y = -10f;
+                mirror = true;
+                rotate = true;
+                baseRotation = 135f;
+                ejectEffect = Fx.casing1;
+                bullet = new BasicBulletType(4.2f, 16f) {{
+                    width = 7f;
+                    height = 9f;
+                    lifetime = 34f;
+                    splashDamage = 26f;
+                    splashDamageRadius = 26f;
+                    backColor = Color.valueOf("4a5a6a");
+                    frontColor = Color.valueOf("e8f4ff");
+                    hitEffect = MrFx.polyBurst;
+                    despawnEffect = MrFx.polyBurst;
+                    shootEffect = MrFx.polyBurst;
+                }};
+            }});
+
             deathExplosionEffect = Fx.massiveExplosion;
             deathSound = Sounds.explosion;
             trailLength = 60;
@@ -1067,19 +1151,19 @@ public class MrUnits {
         // 空中航母：定期放秃鹫，近防炮+副激光
         skylift = new UnitType("skylift") {{
             constructor = UnitEntity::create;
-            health = 5200f;
+            health = 8600f;
             speed = 1.2f;
             accel = 0.035f;
             drag = 0.02f;
             flying = true;
             rotateSpeed = 2.0f;
             baseRotateSpeed = 2.0f;
-            hitSize = 48f;
+            hitSize = 80f;
             armor = 12f;
             itemCapacity = 160;
 
-            engineOffset = 38f;
-            engineSize = 7f;
+            engineOffset = 64f;
+            engineSize = 11f;
             engineColor = Color.valueOf("9fc4e8");
 
             abilities.add(new CarrierAbility(vulture) {{
@@ -1087,7 +1171,7 @@ public class MrUnits {
                 reload = 60f * 10f;
             }});
 
-            weapons.add(new Weapon("skylift-ciws") {{
+            weapons.add(new Weapon("mirrorworld-skylift-ciws") {{
                 reload = 9f;
                 x = 6f;
                 y = 0f;
@@ -1108,7 +1192,7 @@ public class MrUnits {
                 }};
             }});
 
-            weapons.add(new Weapon("skylift-broadside") {{
+            weapons.add(new Weapon("mirrorworld-skylift-broadside") {{
                 reload = 30f;
                 x = 2f;
                 y = 10f;
@@ -1130,6 +1214,34 @@ public class MrUnits {
                 }};
             }});
 
+            weapons.add(new Weapon("mirrorworld-skylift-missiles") {{
+                reload = 65f;
+                x = 4f;
+                y = -8f;
+                mirror = true;
+                rotate = true;
+                baseRotation = -45f;
+                shoot.firstShotDelay = 16f;
+                bullet = new MissileBulletType(3f, 55f) {{
+                    width = 8f;
+                    height = 13f;
+                    lifetime = 55f;
+                    homingPower = 0.2f;
+                    homingRange = 80f;
+                    backColor = Color.valueOf("3a4a78");
+                    frontColor = Color.valueOf("e8f4ff");
+                    trailEffect = MrFx.polyTrail;
+                    trailLength = 10;
+                    trailWidth = 2.4f;
+                    trailColor = Color.valueOf("9fc4e8");
+                    splashDamage = 30f;
+                    splashDamageRadius = 26f;
+                    hitEffect = MrFx.polyBurst;
+                    despawnEffect = MrFx.polyBurst;
+                    shootEffect = Fx.shootBig;
+                }};
+            }});
+
             deathExplosionEffect = Fx.titanExplosion;
             deathSound = Sounds.explosion;
             trailLength = 42;
@@ -1139,15 +1251,15 @@ public class MrUnits {
 
         // 普通航母：地面重甲平台，可连核心；核心被毁后充当核心，打印卫队、储物品、建建筑
         ark = new UnitType("ark") {{
-            constructor = UnitEntity::create;
-            health = 6800f;
+            constructor = UnitWaterMove::create;
+            health = 12000f;
             speed = 0.75f;
-            hitSize = 56f;
+            hitSize = 88f;
             armor = 15f;
             itemCapacity = 320;
             buildSpeed = 2.5f;
 
-            abilities.add(new CarrierAbility(crawler) {{
+            abilities.add(new CarrierAbility(falcon) {{
                 max = 6;
                 reload = 60f * 9f;
             }});
@@ -1157,7 +1269,7 @@ public class MrUnits {
                 maxGuardians = 3;
             }});
 
-            weapons.add(new Weapon("ark-turret") {{
+            weapons.add(new Weapon("mirrorworld-ark-turret") {{
                 reload = 16f;
                 x = 10f;
                 y = 0f;
@@ -1179,7 +1291,7 @@ public class MrUnits {
                 }};
             }});
 
-            weapons.add(new Weapon("ark-artillery") {{
+            weapons.add(new Weapon("mirrorworld-ark-artillery") {{
                 reload = 70f;
                 x = 14f;
                 y = 0f;
@@ -1205,6 +1317,28 @@ public class MrUnits {
                     splashDamageRadius = 40f;
                     collidesAir = true;
                     collidesGround = true;
+                }};
+            }});
+
+            weapons.add(new Weapon("mirrorworld-ark-flak") {{
+                reload = 12f;
+                x = 6f;
+                y = 8f;
+                mirror = true;
+                rotate = true;
+                baseRotation = 90f;
+                ejectEffect = Fx.casing1;
+                bullet = new BasicBulletType(4f, 12f) {{
+                    width = 6f;
+                    height = 8f;
+                    lifetime = 28f;
+                    splashDamage = 20f;
+                    splashDamageRadius = 22f;
+                    backColor = Color.valueOf("4a0c14");
+                    frontColor = Color.valueOf("ffb0b8");
+                    hitEffect = MrFx.polyBurst;
+                    despawnEffect = MrFx.polyBurst;
+                    shootEffect = MrFx.polyBurst;
                 }};
             }});
 

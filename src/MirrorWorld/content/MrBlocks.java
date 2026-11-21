@@ -30,6 +30,7 @@ import mindustry.type.LiquidStack;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.meta.BuildVisibility;
 import mindustry.world.blocks.defense.*;
 import mindustry.world.blocks.defense.turrets.*;
 import mindustry.world.blocks.distribution.*;
@@ -76,6 +77,7 @@ public class MrBlocks {
 
     /* ================= 原有内容 ================= */
     public static Block coreEvoke;
+    public static Block arkCore;
     public static Block assimilator;
     public static Block summonTurret;
 
@@ -262,6 +264,19 @@ public class MrBlocks {
                     prismCrystal, 25,
                     prismLens, 20
             );
+        }};
+
+        /* 可部署核心舱：航母核心代理在无核心时部署，提供真实物品存储与建造范围。不在建造菜单中显示。 */
+        arkCore = new CoreBlock("ark-core") {{
+            size = 3;
+            squareSprite = false;
+            health = 3000;
+            itemCapacity = 800;
+            unitType = UnitTypes.alpha;
+            floating = true;
+            placeableLiquid = true;
+            alwaysUnlocked = false;
+            buildVisibility = BuildVisibility.hidden;
         }};
 
         assimilator = new Assimilator("assimilator") {{
@@ -1573,7 +1588,7 @@ public class MrBlocks {
                     if (prog >= required) {
                         unit.team(team);
                         unit.health(unit.health() * 0.7f);
-                        Fx.spawn.at(unit);
+                        MrFx.polyBurst.at(unit);
                         progress.remove(unit);
                     } else {
                         progress.put(unit, prog);
@@ -1616,17 +1631,11 @@ public class MrBlocks {
                         float radius = u.hitSize() / 2f + 6f;
                         float pulse = 0.8f + Mathf.sin(Time.time * 0.1f) * 0.2f;
 
-                        // 底层脉冲光晕
-                        Drawf.circles(u.x, u.y, radius * 1.1f, Color.valueOf("aaddff").a(0.15f * pulse));
-                        Drawf.circles(u.x, u.y, radius * 1.4f, Color.valueOf("bbddff").a(0.08f * pulse));
+                        // 底层六边形脉冲光晕
+                        MrFx.polyGlow(u.x, u.y, radius * 1.4f, Color.valueOf("aaddff").a(0.15f * pulse));
 
-                        // 进度圆环
-                        Lines.stroke(3f, Color.valueOf("aaddff").a(0.85f));
-                        Lines.arc(u.x, u.y, radius, p, -90f);
-
-                        // 进度高光
-                        Lines.stroke(1.5f, Color.valueOf("ffffff").a(0.9f));
-                        Lines.arc(u.x, u.y, radius, p, -90f);
+                        // 转化进度改为几何直线条，位于单位下方
+                        MrFx.bar(u.x, u.y - radius - 8f, radius * 2.4f, p, Color.valueOf("aaddff").a(0.85f));
                     }
                     Draw.z(z);
                 }
@@ -1638,19 +1647,10 @@ public class MrBlocks {
 
                 float pulse = 0.75f + Mathf.sin(Time.time * 0.05f) * 0.25f;
 
-                // 仅点击时显示的范围虚线/光圈
-                Drawf.circles(x, y, self.range * 1.10f, Color.valueOf("aaddff").a(0.05f * pulse));
-                Drawf.circles(x, y, self.range * 1.04f, Color.valueOf("aaddff").a(0.09f * pulse));
-                Drawf.circles(x, y, self.range * 0.55f, Color.valueOf("aaddff").a(0.04f * pulse));
-
-                Lines.stroke(3.2f, Color.valueOf("aaddff").a(0.16f * pulse));
-                Lines.circle(x, y, self.range);
-
-                Lines.stroke(2f, Color.valueOf("bbddff").a(0.42f * pulse));
-                Lines.circle(x, y, self.range);
-
-                Lines.stroke(1f, Color.valueOf("ffffff").a(0.72f * pulse));
-                Lines.circle(x, y, self.range * 0.98f);
+                // 仅点击时显示六边形范围框
+                MrFx.polyGlow(x, y, self.range, Color.valueOf("aaddff").a(0.10f * pulse));
+                MrFx.hexRing(x, y, self.range, Color.valueOf("bbddff").a(0.42f * pulse));
+                MrFx.hexRing(x, y, self.range * 0.55f, Color.valueOf("ffffff").a(0.30f * pulse));
             }
         }
     }
@@ -1683,8 +1683,8 @@ public class MrBlocks {
             if (b.data instanceof SummonTurret.SummonTurretBuild) {
                 ((SummonTurret.SummonTurretBuild) b.data).addDamage(b.damage);
             }
-            Fx.shockwave.at(x, y, 15f, Color.valueOf("ffcc88"));
-            Fx.spawn.at(x, y);
+            MrFx.polyBurst.at(x, y);
+            MrFx.summonRift.at(x, y);
             Fx.hitBulletColor.at(x, y, 0, Color.valueOf("ff9966"));
         }
     }
@@ -1711,12 +1711,12 @@ public class MrBlocks {
                 if (damageAccumulated >= summonThreshold) {
                     if (falcon != null) {
                         MrFx.summonRift.at(x, y);
-                        Fx.flakExplosion.at(x, y);
+                        MrFx.polyBurst.at(x, y);
                         Unit unit = falcon.create(team);
                         unit.set(x, y);
                         unit.add();
                         MrFx.mirrorWarpIn.at(x, y);
-                        Fx.unitAssemble.at(x, y, 0f, falcon);
+                        MrFx.unitPrint.at(x, y, 0f, falcon);
                         Sounds.explosion.at(x, y);
                     }
                     damageAccumulated = 0f;
@@ -1734,18 +1734,12 @@ public class MrBlocks {
             public void draw() {
                 super.draw();
 
-                // 常驻光效：召唤爆发时的光环
+                // 常驻光效：召唤爆发时的六边形光环
                 if (glowTime > 0f) {
                     float glow = Mathf.clamp(glowTime / 45f);
 
-                    Drawf.circles(x, y, 60f * glow, Color.valueOf("ffcc88").a(0.12f * glow));
-                    Drawf.circles(x, y, 40f * glow, Color.valueOf("ffaa66").a(0.15f * glow));
-
-                    Lines.stroke(4f * glow, Color.valueOf("ffcc88").a(0.65f * glow));
-                    Lines.circle(x, y, 50f * glow);
-
-                    Lines.stroke(2f * glow, Color.valueOf("ffffff").a(0.5f * glow));
-                    Lines.circle(x, y, 35f * glow);
+                    MrFx.polyGlow(x, y, 50f * glow, Color.valueOf("ffcc88").a(0.35f * glow));
+                    MrFx.hexRing(x, y, 35f * glow, Color.valueOf("ffffff").a(0.5f * glow));
                 }
             }
 
@@ -1755,25 +1749,12 @@ public class MrBlocks {
                 float progress = Mathf.clamp(damageAccumulated / summonThreshold);
                 float pulse = 0.8f + Mathf.sin(Time.time * 0.07f) * 0.2f;
 
-                Drawf.circles(x, y, range * 1.08f, Color.valueOf("ff9966").a(0.04f * pulse));
-                Drawf.circles(x, y, range * 1.03f, Color.valueOf("ffaa66").a(0.07f * pulse));
-                Drawf.circles(x, y, range * 0.55f, Color.valueOf("ffcc88").a(0.03f * pulse));
-
-                Lines.stroke(3f, Color.valueOf("ff9966").a(0.18f * pulse));
-                Lines.circle(x, y, range);
-
-                Lines.stroke(2f, Color.valueOf("ffaa66").a(0.42f * pulse));
-                Lines.circle(x, y, range);
-
-                Lines.stroke(1f, Color.valueOf("ffcc88").a(0.7f * pulse));
-                Lines.circle(x, y, range * 0.98f);
+                MrFx.polyGlow(x, y, range, Color.valueOf("ff9966").a(0.07f * pulse));
+                MrFx.hexRing(x, y, range, Color.valueOf("ffaa66").a(0.42f * pulse));
+                MrFx.hexRing(x, y, range * 0.55f, Color.valueOf("ffcc88").a(0.25f * pulse));
 
                 if (progress > 0f) {
-                    Lines.stroke(3.5f, Color.valueOf("ffcc88").a(0.85f));
-                    Lines.arc(x, y, range * 0.96f, progress, 0f);
-
-                    Lines.stroke(1.5f, Color.valueOf("ffffff").a(0.55f * progress));
-                    Lines.arc(x, y, range * 0.96f, progress, 0f);
+                    MrFx.bar(x, y - range * 0.5f - 8f, range * 0.8f, progress, Color.valueOf("ffcc88").a(0.85f));
                 }
             }
 
@@ -1875,7 +1856,7 @@ public class MrBlocks {
                             guardian = spawned;
 
                             MrFx.summonRift.at(spawned.x, spawned.y, rotation);
-                            Fx.unitAssemble.at(spawned.x, spawned.y, rotation, type);
+                            MrFx.unitPrint.at(spawned.x, spawned.y, rotation, type);
                         }
                     }
                 } else if (guardian != null) {
@@ -1919,9 +1900,8 @@ public class MrBlocks {
 
                 float pulse = 0.75f + Mathf.absin(Time.time, 9f, 0.25f);
 
-                // 核心底座光环
-                Drawf.circles(x, y, block.size * 3.5f, turretColor.cpy().a(0.10f * pulse));
-                Drawf.circles(x, y, block.size * 2.6f, turretColor.cpy().a(0.16f * pulse));
+                // 核心底座光晕（六边形）
+                MrFx.polyGlow(x, y, block.size * 3.5f, turretColor.cpy().a(0.20f * pulse));
 
                 // 炮管
                 float bx = x + Angles.trnsx(rotation, turretLength);
@@ -1934,7 +1914,7 @@ public class MrBlocks {
                 Lines.line(x, y, bx, by);
 
                 Lines.stroke(2f, Color.white.cpy().a(0.75f * pulse));
-                Lines.circle(bx, by, 2.4f);
+                Lines.square(bx, by, 2.4f);
 
                 Draw.reset();
                 Draw.z(z);
@@ -1944,18 +1924,13 @@ public class MrBlocks {
             public void drawSelect() {
                 super.drawSelect();
 
-                Drawf.dashCircle(x, y, turretRange, turretColor.cpy().a(0.45f));
-                Drawf.dashCircle(x, y, turretRange * 0.62f, turretColor.cpy().a(0.20f));
+                MrFx.hexRing(x, y, turretRange, turretColor.cpy().a(0.45f));
+                MrFx.hexRing(x, y, turretRange * 0.62f, turretColor.cpy().a(0.20f));
 
-                // 卫队生产进度环
+                // 卫队生产进度条（几何直线）
                 if (guardian == null && guardBuildTime > 0f) {
                     float p = Mathf.clamp(buildCounter / guardBuildTime);
-
-                    Lines.stroke(3f, turretColor.cpy().a(0.9f));
-                    Lines.arc(x, y, block.size * 4f + 5f, p, 0f);
-
-                    Lines.stroke(1.4f, Color.white.cpy().a(0.6f));
-                    Lines.arc(x, y, block.size * 4f + 5f, p, 0f);
+                    MrFx.bar(x, y - block.size * 4f - 8f, block.size * 8f, p, turretColor.cpy().a(0.9f));
                 }
             }
         }
@@ -2165,11 +2140,10 @@ public class MrBlocks {
             @Override
             public void drawSelect(){
                 super.drawSelect();
-                Drawf.dashCircle(x, y, range * 8f, Color.valueOf("9fc4e8"));
+                MrFx.hexRing(x, y, range * 8f, Color.valueOf("9fc4e8"));
 
                 float p = useTime > 0f ? Mathf.clamp(timer / useTime) : 0f;
-                Lines.stroke(3f, Color.valueOf("9fc4e8"));
-                Lines.arc(x, y, block.size * 4f + 3f, p, 0f);
+                MrFx.bar(x, y - block.size * 4f - 8f, block.size * 8f, p, Color.valueOf("9fc4e8"));
             }
         }
     }
